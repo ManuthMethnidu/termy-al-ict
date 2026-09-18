@@ -6,7 +6,8 @@ export type NavTab =
   | 'quests'
   | 'shop'
   | 'profile'
-  | 'more';
+  | 'more'
+  | 'admin';
 
 export interface McqOption {
   id: number;

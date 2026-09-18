@@ -97,15 +97,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </span>
           </div>
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onSelectTab('more');
-          }}
-          className="text-text-muted hover:text-on-surface p-1"
-        >
-          <span className="material-symbols-outlined text-xl">settings</span>
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectTab('admin');
+            }}
+            title="Root Admin Terminal"
+            className="text-text-muted hover:text-primary p-1 transition-colors"
+          >
+            <span className="material-symbols-outlined text-lg">shield</span>
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectTab('more');
+            }}
+            title="Preferences & Settings"
+            className="text-text-muted hover:text-on-surface p-1 transition-colors"
+          >
+            <span className="material-symbols-outlined text-lg">settings</span>
+          </button>
+        </div>
       </div>
     </aside>
   );

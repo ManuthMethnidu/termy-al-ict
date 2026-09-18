@@ -12,12 +12,14 @@ interface SettingsViewProps {
   userStats: UserStats;
   onUpdateStats: (newStats: Partial<UserStats>) => void;
   onOpenHelp: () => void;
+  onOpenAdmin?: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   userStats,
   onUpdateStats,
   onOpenHelp,
+  onOpenAdmin,
 }) => {
   // Supabase states
   const [supabaseUrl, setSupabaseUrl] = useState<string>('');
@@ -468,6 +470,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </button>
           ))}
         </div>
+      </section>
+
+      {/* Root Admin Console Gate */}
+      <section className="p-5 rounded-2xl bg-card-dark border border-primary/40 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
+            <span className="material-symbols-outlined text-2xl">admin_panel_settings</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-on-surface">Root Administration</span>
+            <span className="text-xs text-text-muted">MANA terminal console, telemetry & candidate records</span>
+          </div>
+        </div>
+        <button
+          onClick={onOpenAdmin}
+          className="px-4 py-2 bg-primary/20 hover:bg-primary text-primary hover:text-on-primary-fixed rounded-xl text-xs uppercase font-extrabold tracking-wider border border-primary/40 transition-all flex items-center gap-1.5 shrink-0"
+        >
+          <span className="material-symbols-outlined text-sm">lock</span>
+          <span>Open Admin</span>
+        </button>
       </section>
 
       {/* App Information */}

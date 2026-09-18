@@ -10,6 +10,7 @@ import { QuestsView } from './components/views/QuestsView';
 import { ShopView } from './components/views/ShopView';
 import { ProfileView } from './components/views/ProfileView';
 import { SettingsView } from './components/views/SettingsView';
+import { AdminPanelView } from './components/views/AdminPanelView';
 import { GuidebookModal } from './components/views/GuidebookModal';
 import { HelpFaqModal } from './components/views/HelpFaqModal';
 import { LiveMcqDrill } from './components/drill/LiveMcqDrill';
@@ -222,7 +223,12 @@ export const App: React.FC = () => {
               userStats={userStats}
               onUpdateStats={handleUpdateStats}
               onOpenHelp={() => setIsHelpOpen(true)}
+              onOpenAdmin={() => setActiveTab('admin')}
             />
+          )}
+
+          {activeTab === 'admin' && (
+            <AdminPanelView onExit={() => setActiveTab('learn')} />
           )}
         </main>
       </div>
