@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #131f24;
+    color: #d7e5eb;
+    font-family: 'Nunito Sans', sans-serif;
+  }
+
+  body {
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Custom 3D tactile button press utility */
+.btn-pressable-primary {
+  box-shadow: 0 4px 0 #46a302;
+  transition: all 0.1s ease;
+}
+.btn-pressable-primary:hover {
+  filter: brightness(1.08);
+}
+.btn-pressable-primary:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #46a302;
+}
+
+.btn-pressable-gold {
+  box-shadow: 0 4px 0 #ddad00;
+  transition: all 0.1s ease;
+}
+.btn-pressable-gold:hover {
+  filter: brightness(1.08);
+}
+.btn-pressable-gold:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #ddad00;
+}
+
+.btn-pressable-secondary {
+  box-shadow: 0 4px 0 #1899d6;
+  transition: all 0.1s ease;
+}
+.btn-pressable-secondary:hover {
+  filter: brightness(1.08);
+}
+.btn-pressable-secondary:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #1899d6;
+}
+
+.btn-pressable-dark {
+  box-shadow: 0 4px 0 #242e34;
+  transition: all 0.1s ease;
+}
+.btn-pressable-dark:hover {
+  filter: brightness(1.08);
+}
+.btn-pressable-dark:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #242e34;
+}
+
+/* Hide scrollbars for clean distraction-free dev feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #09151a;
+}
+::-webkit-scrollbar-thumb {
+  background: #2b4754;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #37464f;
+}
+
+/* KaTeX tweaks for dark mode */
+.katex {
+  font-size: 1.1em;
+  color: #88ceff;
+}
+.katex-display {
+  margin: 0.5em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}

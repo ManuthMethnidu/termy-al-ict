@@ -1,0 +1,630 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-background": "#d7e5eb",
+          "on-primary-fixed": "#082100",
+          "on-surface-variant": "#becbb1",
+          "card-border": "#2b4754",
+          "surface-container-lowest": "#041015",
+          "inverse-surface": "#d7e5eb",
+          "surface-container-high": "#202c31",
+          "surface-container-low": "#111d22",
+          "primary-fixed-dim": "#6be026",
+          "tertiary": "#fec800",
+          "ecto-green-dark": "#46a302",
+          "secondary-container": "#00a8ed",
+          "inverse-primary": "#2b6c00",
+          "tertiary-fixed-dim": "#f4bf00",
+          "on-secondary-container": "#003954",
+          "surface-bright": "#2f3b40",
+          "on-tertiary": "#3e2e00",
+          "crimson-heart-dark": "#d92f2f",
+          "inverse-on-surface": "#263237",
+          "surface": "#09151a",
+          "background": "#09151a",
+          "on-primary": "#133800",
+          "on-primary-fixed-variant": "#1f5100",
+          "on-secondary-fixed": "#001e2e",
+          "primary": "#74e930",
+          "secondary": "#88ceff",
+          "surface-container": "#152126",
+          "surface-container-highest": "#2a373c",
+          "on-tertiary-container": "#574300",
+          "on-tertiary-fixed-variant": "#594400",
+          "error-container": "#93000a",
+          "gray-inactive-dark": "#242e34",
+          "outline-variant": "#3f4a36",
+          "macaw-blue-dark": "#1899d6",
+          "crimson-heart": "#ff4b4b",
+          "lightning-gold": "#ffc800",
+          "on-error": "#690005",
+          "surface-variant": "#2a373c",
+          "card-dark": "#1b2e35",
+          "on-surface": "#d7e5eb",
+          "on-error-container": "#ffdad6",
+          "on-primary-container": "#1e5000",
+          "text-muted": "#89a3af",
+          "on-secondary-fixed-variant": "#004c6e",
+          "secondary-fixed": "#c8e6ff",
+          "tertiary-container": "#ddad00",
+          "error": "#ffb4ab",
+          "on-secondary": "#00344d",
+          "surface-dim": "#09151a",
+          "gray-inactive": "#37464f",
+          "surface-tint": "#6be026",
+          "secondary-fixed-dim": "#88ceff",
+          "outline": "#88957d",
+          "tertiary-fixed": "#ffdf92",
+          "on-tertiary-fixed": "#241a00",
+          "primary-container": "#58cc02",
+          "primary-fixed": "#87fe45"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "space-sm": "0.5rem",
+          "space-2xl": "3rem",
+          "space-xs": "0.25rem",
+          "margin-md": "1.5rem",
+          "gutter-lg": "1.5rem",
+          "margin-lg": "2.5rem",
+          "space-lg": "1.5rem",
+          "space-xl": "2rem",
+          "gutter": "1rem",
+          "margin": "1rem",
+          "space-md": "1rem"
+        },
+        "fontFamily": {
+          "label-md": [
+            "Nunito Sans"
+          ],
+          "label-sm": [
+            "Nunito Sans"
+          ],
+          "display-lg": [
+            "Nunito Sans"
+          ],
+          "headline-sm": [
+            "Nunito Sans"
+          ],
+          "body-lg": [
+            "Nunito Sans"
+          ],
+          "headline-lg": [
+            "Nunito Sans"
+          ],
+          "headline-md": [
+            "Nunito Sans"
+          ],
+          "body-md": [
+            "Nunito Sans"
+          ],
+          "display-sm": [
+            "Nunito Sans"
+          ],
+          "body-sm": [
+            "Nunito Sans"
+          ],
+          "label-lg": [
+            "Nunito Sans"
+          ]
+        },
+        "fontSize": {
+          "label-md": [
+            "13px",
+            {
+              "lineHeight": "18px",
+              "letterSpacing": "0.05em",
+              "fontWeight": "700"
+            }
+          ],
+          "label-sm": [
+            "11px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.08em",
+              "fontWeight": "800"
+            }
+          ],
+          "display-lg": [
+            "40px",
+            {
+              "lineHeight": "48px",
+              "letterSpacing": "0.04em",
+              "fontWeight": "800"
+            }
+          ],
+          "headline-sm": [
+            "18px",
+            {
+              "lineHeight": "24px",
+              "letterSpacing": "0.01em",
+              "fontWeight": "700"
+            }
+          ],
+          "body-lg": [
+            "17px",
+            {
+              "lineHeight": "26px",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-lg": [
+            "26px",
+            {
+              "lineHeight": "34px",
+              "letterSpacing": "0.02em",
+              "fontWeight": "800"
+            }
+          ],
+          "headline-md": [
+            "22px",
+            {
+              "lineHeight": "30px",
+              "letterSpacing": "0.02em",
+              "fontWeight": "700"
+            }
+          ],
+          "body-md": [
+            "15px",
+            {
+              "lineHeight": "22px",
+              "fontWeight": "500"
+            }
+          ],
+          "display-sm": [
+            "32px",
+            {
+              "lineHeight": "40px",
+              "letterSpacing": "0.03em",
+              "fontWeight": "800"
+            }
+          ],
+          "body-sm": [
+            "13px",
+            {
+              "lineHeight": "18px",
+              "fontWeight": "500"
+            }
+          ],
+          "label-lg": [
+            "15px",
+            {
+              "lineHeight": "20px",
+              "letterSpacing": "0.06em",
+              "fontWeight": "800"
+            }
+          ]
+        }
+      }
+    }
+  };</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-low border-r-2 border-card-border z-50 flex flex-col justify-between p-space-md"><div class="flex flex-col gap-space-lg"><div class="flex items-center gap-space-sm px-space-sm py-space-xs"><span class="font-headline-md text-headline-md tracking-wider text-primary">TERMY</span></div><nav class="flex flex-col gap-space-xs" data-active-classes="bg-card-dark text-primary border-2 border-card-border border-b-4"><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-on-surface-variant font-label-lg text-label-lg uppercase tracking-wider hover:bg-surface-container-high hover:text-on-surface transition-all duration-150 active:translate-y-0.5" data-path="learn" href="#"><span class="material-symbols-outlined text-[24px]">terminal</span><span class="">Learn</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-on-surface-variant font-label-lg text-label-lg uppercase tracking-wider hover:bg-surface-container-high hover:text-on-surface transition-all duration-150 active:translate-y-0.5" data-path="practice" href="#"><span class="material-symbols-outlined text-[24px]">code</span><span class="">Practice</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-on-surface-variant font-label-lg text-label-lg uppercase tracking-wider hover:bg-surface-container-high hover:text-on-surface transition-all duration-150 active:translate-y-0.5" data-path="leaderboards" href="#"><span class="material-symbols-outlined text-[24px]">leaderboard</span><span class="">Leaderboards</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-on-surface-variant font-label-lg text-label-lg uppercase tracking-wider hover:bg-surface-container-high hover:text-on-surface transition-all duration-150 active:translate-y-0.5" data-path="quests" href="#"><span class="material-symbols-outlined text-[24px]">flag</span><span class="">Quests</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-on-surface-variant font-label-lg text-label-lg uppercase tracking-wider hover:bg-surface-container-high hover:text-on-surface transition-all duration-150 active:translate-y-0.5" data-path="shop" href="#"><span class="material-symbols-outlined text-[24px]">storefront</span><span class="">Shop</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-on-surface-variant font-label-lg text-label-lg uppercase tracking-wider hover:bg-surface-container-high hover:text-on-surface transition-all duration-150 active:translate-y-0.5" data-path="profile" href="#"><span class="material-symbols-outlined text-[24px]">account_circle</span><span class="">Profile</span></a><div class="relative"><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-on-surface-variant font-label-lg text-label-lg uppercase tracking-wider hover:bg-surface-container-high hover:text-on-surface transition-all duration-150 active:translate-y-0.5" data-path="more" href="#"><span class="material-symbols-outlined text-[24px]">more_horiz</span><span class="">More</span></a><div class="mt-space-xs ml-space-md pl-space-md border-l-2 border-card-border flex flex-col gap-space-xs"><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span class="">Settings</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg font-label-md transition-all bg-card-dark text-primary border-2 border-card-border border-b-4" data-path="help" href="#"><span class="material-symbols-outlined text-[18px]">help</span><span class="">Help &amp; Docs</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="about" href="#"><span class="material-symbols-outlined text-[18px]">info</span><span class="">About</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="terms" href="#"><span class="material-symbols-outlined text-[18px]">description</span><span class="">Terms</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="privacy" href="#"><span class="material-symbols-outlined text-[18px]">shield</span><span class="">Privacy</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="dev" href="#"><span class="material-symbols-outlined text-[18px]">terminal</span><span class="">Dev Work</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-crimson-heart transition-all" data-path="logout" href="#"><span class="material-symbols-outlined text-[18px]">logout</span><span class="">Log Out</span></a></div></div></nav></div><div class="bg-card-dark border-2 border-card-border rounded-xl p-space-sm flex items-center justify-between"><div class="flex items-center gap-space-xs text-text-muted font-label-sm text-label-sm"><span class="material-symbols-outlined text-primary text-[16px]">memory</span><span class="">AL ICT ENGINE</span></div><span class="font-label-sm text-label-sm px-space-xs py-0.5 bg-surface-container-highest text-primary rounded">v2.4</span></div></aside><div class="pl-64 flex flex-col min-h-screen"><header class="fixed top-0 left-64 right-0 h-16 bg-surface-container-low/90 backdrop-blur-md border-b-2 border-card-border z-40 px-gutter-lg flex items-center justify-between"><div class="flex items-center gap-space-md"><div class="hidden sm:flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md"><span class="material-symbols-outlined text-[18px]">terminal</span><span class="text-on-surface">SYSTEM: READY</span></div></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-card-dark border-2 border-card-border px-space-md py-space-xs rounded-xl shadow-[0_2px_0_0_#2b4754]"><span class="material-symbols-outlined text-lightning-gold text-[20px]">local_fire_department</span><span class="font-label-lg text-label-lg text-lightning-gold">14</span></div><div class="flex items-center gap-space-xs bg-card-dark border-2 border-card-border px-space-md py-space-xs rounded-xl shadow-[0_2px_0_0_#2b4754]"><span class="material-symbols-outlined text-secondary text-[20px]">diamond</span><span class="font-label-lg text-label-lg text-secondary">480</span></div><div class="flex items-center gap-space-xs bg-card-dark border-2 border-card-border px-space-md py-space-xs rounded-xl shadow-[0_2px_0_0_#2b4754]"><span class="material-symbols-outlined text-crimson-heart text-[20px]">favorite</span><span class="font-label-lg text-label-lg text-crimson-heart">5</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center border-2 border-ecto-green-dark cursor-pointer active:scale-95 transition-transform"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="w-full pt-16 bg-surface flex-1 px-gutter-lg py-space-lg"><div class="flex flex-col w-full max-w-4xl mx-auto pb-space-2xl">
+<!-- Breadcrumb Navigation -->
+<div class="flex items-center gap-space-xs text-text-muted font-label-md text-label-md uppercase tracking-wider mb-space-md">
+<a class="hover:text-secondary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]">terminal</span>
+<span class="">MORE</span>
+</a>
+<span class="text-card-border font-bold">&gt;</span>
+<span class="text-secondary font-label-md text-label-md">HELP CENTER</span>
+<span class="text-card-border font-bold">&gt;</span>
+<span class="text-on-surface">FAQS</span>
+</div>
+<!-- Hero Title Area -->
+<div class="text-center mb-space-xl relative">
+<div class="inline-flex items-center gap-space-xs px-space-md py-1 rounded-full bg-surface-container-high border-2 border-card-border mb-space-sm shadow-[0_2px_0_0_#2b4754]">
+<span class="material-symbols-outlined text-secondary text-[18px]">help_center</span>
+<span class="text-secondary font-label-sm text-label-sm uppercase tracking-wider">A/L ICT Knowledge Base</span>
+</div>
+<h1 class="text-display-lg font-display-lg text-on-surface tracking-wide">
+      Frequently Asked Questions
+    </h1>
+<p class="text-text-muted font-body-md text-body-md max-w-xl mx-auto mt-space-xs">
+      Need clarity on the examination syllabus, streak freezes, or marking scheme algorithms? Find answers directly curated by A/L ICT examiners.
+    </p>
+<!-- Search Input Quick Filter -->
+<div class="mt-space-lg max-w-md mx-auto relative">
+<span class="material-symbols-outlined absolute left-space-md top-1/2 -translate-y-1/2 text-text-muted text-[20px]">search</span>
+<input class="w-full bg-card-dark border-2 border-card-border rounded-xl pl-11 pr-space-md py-space-sm text-on-surface font-body-md placeholder:text-text-muted/60 focus:outline-none focus:border-secondary transition-all shadow-[0_3px_0_0_#2b4754]" id="faqSearch" placeholder="Filter questions (e.g. Python, CIDR, Gems, Reset)..." type="text">
+</div>
+</div>
+<!-- FAQ Accordion Container -->
+<div class="flex flex-col gap-space-xl" id="faqAccordionContainer">
+<!-- Group 1: Using Termy & A/L ICT Prep -->
+<div class="bg-surface-container-low border-2 border-card-border rounded-2xl p-space-md sm:p-space-lg shadow-[0_4px_0_0_#2b4754]">
+<div class="flex items-center justify-between pb-space-sm border-b-2 border-card-border mb-space-xs">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[24px]">developer_board</span>
+<h2 class="text-secondary font-label-lg text-label-lg uppercase tracking-wider">
+            Using Termy &amp; A/L ICT Prep
+          </h2>
+</div>
+<span class="text-text-muted font-label-sm text-label-sm bg-card-dark px-space-sm py-0.5 rounded border border-card-border">
+          4 TOPICS
+        </span>
+</div>
+<div class="divide-y-2 divide-card-border/60">
+<!-- Item 1: Expanded by default -->
+<div class="faq-item pt-space-md pb-space-md" data-question="why did my course sequence change nie doe python syllabus">
+<button class="faq-trigger w-full flex items-center justify-between gap-space-md text-left group">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-secondary transition-colors">
+              Why did my A/L ICT course sequence change?
+            </span>
+<span class="faq-icon material-symbols-outlined text-secondary text-[24px] transition-transform duration-200 rotate-180">
+              keyboard_arrow_up
+            </span>
+</button>
+<div class="faq-content mt-space-sm text-on-surface-variant font-body-md text-body-md leading-relaxed pr-space-lg">
+<p class="mb-space-sm">
+              Termy continuously aligns syllabus modules with the latest Department of Examinations (DOE) and National Institute of Education (NIE) syllabus circulars. When updates occur (such as expanded Python 3.10+ questions, database normalization depth, or updated CIDR subnetting queries), your lesson path reorganizes so you practice high-frequency past paper patterns first.
+            </p>
+<div class="bg-card-dark border-2 border-card-border rounded-xl p-space-sm flex items-center justify-between mt-space-sm">
+<div class="flex items-center gap-space-sm text-text-muted text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-primary text-[18px]">verified</span>
+<span class="">DOE Syllabus Circular Reference: NIE/ICT/AL-2024-REV</span>
+</div>
+<a class="text-secondary hover:text-white font-label-md text-label-md flex items-center gap-1 transition-colors" href="#">
+                READ SYLLABUS CHANGE LOG &gt;
+              </a>
+</div>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="faq-item pt-space-md pb-space-md" data-question="how are daily streaks and streak freezes calculated local fire department">
+<button class="faq-trigger w-full flex items-center justify-between gap-space-md text-left group">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-secondary transition-colors">
+              How are daily streaks and streak freezes calculated?
+            </span>
+<span class="faq-icon material-symbols-outlined text-text-muted text-[24px] transition-transform duration-200">
+              keyboard_arrow_down
+            </span>
+</button>
+<div class="faq-content hidden mt-space-sm text-on-surface-variant font-body-md text-body-md leading-relaxed pr-space-lg">
+<p class="">
+              Your streak increments when you complete at least one past paper MCQ drill or logic simulation before 23:59 IST. A Streak Freeze (purchasable with 120 Bits in the Shop) shields your streak from resetting if you miss a revision day due to tuition classes or mock exams. A maximum of two freezes can be equipped concurrently.
+            </p>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="faq-item pt-space-md pb-space-md" data-question="what is diamond league promotion cutoffs island rank">
+<button class="faq-trigger w-full flex items-center justify-between gap-space-md text-left group">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-secondary transition-colors">
+              What is Diamond League and how do promotion cutoffs work?
+            </span>
+<span class="faq-icon material-symbols-outlined text-text-muted text-[24px] transition-transform duration-200">
+              keyboard_arrow_down
+            </span>
+</button>
+<div class="faq-content hidden mt-space-sm text-on-surface-variant font-body-md text-body-md leading-relaxed pr-space-lg">
+<p class="">
+              Leaderboard cohorts run on a 7-day cycle concluding every Sunday at 20:00 IST. The top 10 candidates with the highest accumulated XP from MCQ accuracy and timed speed-drills are promoted to the next tier (Bronze up to Diamond League). Demotion zones trigger for candidates in the lowest 5 ranks of their respective 30-candidate pool.
+            </p>
+</div>
+</div>
+<!-- Item 4 -->
+<div class="faq-item pt-space-md pb-space-md" data-question="does termy use official doe past paper marking schemes git ict">
+<button class="faq-trigger w-full flex items-center justify-between gap-space-md text-left group">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-secondary transition-colors">
+              Does Termy use official DOE past paper marking schemes?
+            </span>
+<span class="faq-icon material-symbols-outlined text-text-muted text-[24px] transition-transform duration-200">
+              keyboard_arrow_down
+            </span>
+</button>
+<div class="faq-content hidden mt-space-sm text-on-surface-variant font-body-md text-body-md leading-relaxed pr-space-lg">
+<p class="">
+              Yes. All question explanations and answers strictly reflect official marking guidelines issued by the Department of Examinations for G.C.E. Advanced Level ICT from 2011 to 2023, cross-validated by state university computer science faculties and lead chief examiners.
+            </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Group 2: Account & Examination Batch -->
+<div class="bg-surface-container-low border-2 border-card-border rounded-2xl p-space-md sm:p-space-lg shadow-[0_4px_0_0_#2b4754]">
+<div class="flex items-center justify-between pb-space-sm border-b-2 border-card-border mb-space-xs">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[24px]">badge</span>
+<h2 class="text-secondary font-label-lg text-label-lg uppercase tracking-wider">
+            Account &amp; Examination Batch
+          </h2>
+</div>
+<span class="text-text-muted font-label-sm text-label-sm bg-card-dark px-space-sm py-0.5 rounded border border-card-border">
+          4 TOPICS
+        </span>
+</div>
+<div class="divide-y-2 divide-card-border/60">
+<!-- Item 1 -->
+<div class="faq-item pt-space-md pb-space-md" data-question="how do i change my examination year 2025 vs 2026 a/l batch">
+<button class="faq-trigger w-full flex items-center justify-between gap-space-md text-left group">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-secondary transition-colors">
+              How do I change my examination year (2025 vs 2026 A/L)?
+            </span>
+<span class="faq-icon material-symbols-outlined text-text-muted text-[24px] transition-transform duration-200">
+              keyboard_arrow_down
+            </span>
+</button>
+<div class="faq-content hidden mt-space-sm text-on-surface-variant font-body-md text-body-md leading-relaxed pr-space-lg">
+<p class="">
+              Navigate to <strong class="text-on-surface font-label-md">Profile &gt; Settings &gt; Exam Target</strong>. Adjusting your target batch automatically recalculates your weekly pacing metrics, countdown dashboard, and prioritizes syllabus milestones for your target academic calendar.
+            </p>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="faq-item pt-space-md pb-space-md" data-question="how do i connect with schoolmates from royal ananda visakha or kingswood leaderboards">
+<button class="faq-trigger w-full flex items-center justify-between gap-space-md text-left group">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-secondary transition-colors">
+              How do I connect with schoolmates from Royal, Ananda, Visakha, or Kingswood?
+            </span>
+<span class="faq-icon material-symbols-outlined text-text-muted text-[24px] transition-transform duration-200">
+              keyboard_arrow_down
+            </span>
+</button>
+<div class="faq-content hidden mt-space-sm text-on-surface-variant font-body-md text-body-md leading-relaxed pr-space-lg">
+<p class="">
+              In the <strong class="text-on-surface font-label-md">Leaderboards</strong> tab, click the School Guild selector to join or switch your high school affiliate. You will instantly populate the internal school roster and compete for Inter-School IT Society XP cups.
+            </p>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="faq-item pt-space-md pb-space-md" data-question="can i reset my unit mastery for boolean algebra or networking units">
+<button class="faq-trigger w-full flex items-center justify-between gap-space-md text-left group">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-secondary transition-colors">
+              Can I reset my unit mastery for Boolean Algebra or Networking?
+            </span>
+<span class="faq-icon material-symbols-outlined text-text-muted text-[24px] transition-transform duration-200">
+              keyboard_arrow_down
+            </span>
+</button>
+<div class="faq-content hidden mt-space-sm text-on-surface-variant font-body-md text-body-md leading-relaxed pr-space-lg">
+<p class="">
+              Yes. Access any completed stepping-stone node on the skill path, tap the options glyph, and choose <span class="text-lightning-gold font-semibold">"Replay Drill"</span> to retain your crown while resetting node accuracy, or choose <span class="text-crimson-heart font-semibold">"Full Unit Reset"</span> under Settings &gt; Data Management.
+            </p>
+</div>
+</div>
+<!-- Item 4 -->
+<div class="faq-item pt-space-md pb-space-md" data-question="how do i report an errata in a past paper mcq explanation flagging question">
+<button class="faq-trigger w-full flex items-center justify-between gap-space-md text-left group">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-secondary transition-colors">
+              How do I report an errata in a past paper MCQ explanation?
+            </span>
+<span class="faq-icon material-symbols-outlined text-text-muted text-[24px] transition-transform duration-200">
+              keyboard_arrow_down
+            </span>
+</button>
+<div class="faq-content hidden mt-space-sm text-on-surface-variant font-body-md text-body-md leading-relaxed pr-space-lg">
+<p class="">
+              During any drill review screen, click the <span class="text-crimson-heart font-bold">[Flag / Report Issue]</span> button positioned directly below the explanation block. Our moderation panel of national syllabus mentors reviews reports within 24 hours.
+            </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Group 3: Super Termy & Offline Drills -->
+<div class="bg-surface-container-low border-2 border-card-border rounded-2xl p-space-md sm:p-space-lg shadow-[0_4px_0_0_#2b4754]">
+<div class="flex items-center justify-between pb-space-sm border-b-2 border-card-border mb-space-xs">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[24px]">bolt</span>
+<h2 class="text-secondary font-label-lg text-label-lg uppercase tracking-wider">
+            Super Termy &amp; Offline Drills
+          </h2>
+</div>
+<span class="text-text-muted font-label-sm text-label-sm bg-card-dark px-space-sm py-0.5 rounded border border-card-border">
+          3 TOPICS
+        </span>
+</div>
+<div class="divide-y-2 divide-card-border/60">
+<!-- Item 1 -->
+<div class="faq-item pt-space-md pb-space-md" data-question="what is included in super termy pro subscription unlimited hearts">
+<button class="faq-trigger w-full flex items-center justify-between gap-space-md text-left group">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-secondary transition-colors">
+              What is included in Super Termy Pro?
+            </span>
+<span class="faq-icon material-symbols-outlined text-text-muted text-[24px] transition-transform duration-200">
+              keyboard_arrow_down
+            </span>
+</button>
+<div class="faq-content hidden mt-space-sm text-on-surface-variant font-body-md text-body-md leading-relaxed pr-space-lg">
+<p class="">
+              Super Termy includes <strong class="text-on-surface">Unlimited Hearts</strong> (no interruptions during mock exam drills), full access to the interactive Python code sandbox, structured answer model papers (Paper II Parts A &amp; B), and targeted Weakness Analysis powered by your historical mistake ledger.
+            </p>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="faq-item pt-space-md pb-space-md" data-question="how do i activate the 7 day free trial without a credit card trial">
+<button class="faq-trigger w-full flex items-center justify-between gap-space-md text-left group">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-secondary transition-colors">
+              How do I activate the 7-day free trial without a credit card?
+            </span>
+<span class="faq-icon material-symbols-outlined text-text-muted text-[24px] transition-transform duration-200">
+              keyboard_arrow_down
+            </span>
+</button>
+<div class="faq-content hidden mt-space-sm text-on-surface-variant font-body-md text-body-md leading-relaxed pr-space-lg">
+<p class="">
+              Students can start a 7-day trial using their Department of Examinations student index number or verified school ID without providing payment details. Once the trial finishes, your account reverts seamlessly to standard free tier with your 5-heart daily regeneration.
+            </p>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="faq-item pt-space-md pb-space-md" data-question="can i practice timed mcqs offline during tuition travel bus cache">
+<button class="faq-trigger w-full flex items-center justify-between gap-space-md text-left group">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-secondary transition-colors">
+              Can I practice timed MCQs offline during tuition travel?
+            </span>
+<span class="faq-icon material-symbols-outlined text-text-muted text-[24px] transition-transform duration-200">
+              keyboard_arrow_down
+            </span>
+</button>
+<div class="faq-content hidden mt-space-sm text-on-surface-variant font-body-md text-body-md leading-relaxed pr-space-lg">
+<p class="">
+              Yes. Enable <span class="text-primary font-bold">Offline Sync</span> under the Practice menu to pre-cache up to 10 past paper drill units. Completed questions and streak updates automatically reconcile when your mobile device reconnects to Wi-Fi or mobile data.
+            </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Technical Specs & Diagnostic Card -->
+<div class="mt-space-xl bg-card-dark border-2 border-card-border rounded-xl p-space-md flex flex-col sm:flex-row items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center border-2 border-card-border text-primary shadow-[0_2px_0_0_#2b4754]">
+<span class="material-symbols-outlined text-[26px]">memory</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-on-surface">Client Engine Diagnostic</div>
+<div class="text-text-muted font-body-sm text-body-sm">AL ICT Revision Core • Build v2.4-prod • Island Ranking Engine Active</div>
+</div>
+</div>
+<button class="px-space-md py-space-xs rounded-xl bg-surface-container-high border-2 border-card-border hover:bg-surface-bright text-on-surface font-label-md text-label-md uppercase tracking-wider transition-all active:translate-y-0.5 shadow-[0_2px_0_0_#2b4754] flex items-center gap-1" onclick="window.location.reload()">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+<span class="">Verify Sync</span>
+</button>
+</div>
+<!-- Bottom Feedback Callout -->
+<div class="mt-space-2xl text-center flex flex-col items-center">
+<div class="w-14 h-14 rounded-2xl bg-card-dark border-2 border-card-border flex items-center justify-center text-secondary shadow-[0_4px_0_0_#2b4754] mb-space-md">
+<span class="material-symbols-outlined text-[32px]">support_agent</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-space-xs">
+      Still unsure about something?
+    </h3>
+<p class="text-text-muted font-body-md text-body-md max-w-md mb-space-lg">
+      Can't locate your question? Open a direct ticket with our senior ICT academic coordinators and technical desk.
+    </p>
+<!-- Chunky tactile button: Cyan 3D extrusion -->
+<button class="h-12 sm:h-14 px-space-xl bg-secondary-container hover:bg-[#1cb0f6] text-on-surface font-label-lg text-label-lg uppercase tracking-wider rounded-2xl border-b-4 border-macaw-blue-dark active:translate-y-1 active:border-b-1 transition-all flex items-center gap-space-sm shadow-[0_4px_12px_rgba(0,168,237,0.25)]" id="feedbackModalBtn">
+<span class="material-symbols-outlined text-[22px]">send</span>
+<span class="">SUBMIT INQUIRY / SEND FEEDBACK</span>
+</button>
+</div>
+<!-- Feedback Dialog Overlay -->
+<div class="fixed inset-0 bg-[#0b1316]/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-space-md" id="feedbackModal">
+<div class="bg-surface-container-low border-2 border-card-border rounded-2xl max-w-lg w-full p-space-lg shadow-[0_8px_0_0_#2b4754] relative">
+<div class="flex items-center justify-between pb-space-sm border-b-2 border-card-border mb-space-md">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[24px]">terminal</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Submit A/L ICT Inquiry</span>
+</div>
+<button class="text-text-muted hover:text-on-surface p-1 rounded-lg hover:bg-card-dark transition-colors" id="closeModalBtn">
+<span class="material-symbols-outlined text-[24px]">close</span>
+</button>
+</div>
+<form class="flex flex-col gap-space-md" id="inquiryForm" onsubmit="event.preventDefault(); handleInquirySubmit();">
+<div>
+<label class="block text-on-surface font-label-sm text-label-sm uppercase tracking-wider mb-space-xs">Topic Category</label>
+<select class="w-full bg-card-dark border-2 border-card-border rounded-xl px-space-md py-space-sm text-on-surface font-body-md focus:outline-none focus:border-secondary">
+<option>Syllabus &amp; Exam Past Paper Question Errata</option>
+<option>Streak, XP &amp; Diamonds Discrepancy</option>
+<option>Super Termy / Account Billing</option>
+<option>School Guild Leaderboard Request</option>
+<option>Other Technical Question</option>
+</select>
+</div>
+<div>
+<label class="block text-on-surface font-label-sm text-label-sm uppercase tracking-wider mb-space-xs">Your Candidate Email / Phone</label>
+<input class="w-full bg-card-dark border-2 border-card-border rounded-xl px-space-md py-space-sm text-on-surface font-body-md focus:outline-none focus:border-secondary placeholder:text-text-muted/60" placeholder="e.g. ict_champ@gmail.com" required="" type="text">
+</div>
+<div>
+<label class="block text-on-surface font-label-sm text-label-sm uppercase tracking-wider mb-space-xs">Message / Question Details</label>
+<textarea class="w-full bg-card-dark border-2 border-card-border rounded-xl px-space-md py-space-sm text-on-surface font-body-md focus:outline-none focus:border-secondary placeholder:text-text-muted/60" placeholder="Please describe the question number or issue in detail..." required="" rows="4"></textarea>
+</div>
+<div class="hidden p-space-sm bg-[#1a381e] border-2 border-ecto-green-dark rounded-xl text-primary font-body-sm text-body-sm flex items-center gap-2" id="modalSuccess">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+<span class="">Inquiry transmitted! Dispatch team will respond within 4 academic hours.</span>
+</div>
+<div class="flex items-center justify-end gap-space-sm pt-space-xs">
+<button class="px-space-md py-space-sm rounded-xl font-label-md text-label-md uppercase tracking-wider text-text-muted hover:text-on-surface hover:bg-card-dark transition-colors" id="cancelModalBtn" type="button">
+            Cancel
+          </button>
+<button class="h-11 px-space-lg bg-primary-container hover:bg-primary text-on-primary-container hover:text-on-primary font-label-md text-label-md uppercase tracking-wider rounded-xl border-b-4 border-ecto-green-dark active:translate-y-0.5 active:border-b-1 transition-all shadow-[0_2px_0_0_#2b4754]" type="submit">
+            Transmit Ticket
+          </button>
+</div>
+</form>
+</div>
+</div>
+</div>
+<script>
+  // Accordion Expand/Collapse Logic
+  document.querySelectorAll('.faq-trigger').forEach(trigger => {
+    trigger.addEventListener('click', () => {
+      const parent = trigger.closest('.faq-item');
+      const content = parent.querySelector('.faq-content');
+      const icon = trigger.querySelector('.faq-icon');
+      const isHidden = content.classList.contains('hidden');
+
+      if (isHidden) {
+        content.classList.remove('hidden');
+        icon.classList.add('rotate-180', 'text-secondary');
+        icon.classList.remove('text-text-muted');
+        icon.textContent = 'keyboard_arrow_up';
+      } else {
+        content.classList.add('hidden');
+        icon.classList.remove('rotate-180', 'text-secondary');
+        icon.classList.add('text-text-muted');
+        icon.textContent = 'keyboard_arrow_down';
+      }
+    });
+  });
+
+  // Search Filter functionality
+  const searchInput = document.getElementById('faqSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      const faqItems = document.querySelectorAll('.faq-item');
+
+      faqItems.forEach(item => {
+        const text = (item.getAttribute('data-question') || '') + ' ' + item.innerText.toLowerCase();
+        if (!query || text.includes(query)) {
+          item.style.display = '';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    });
+  }
+
+  // Feedback Modal Controls
+  const modal = document.getElementById('feedbackModal');
+  const openBtn = document.getElementById('feedbackModalBtn');
+  const closeBtn = document.getElementById('closeModalBtn');
+  const cancelBtn = document.getElementById('cancelModalBtn');
+
+  function openModal() { modal.classList.remove('hidden'); }
+  function closeModal() { modal.classList.add('hidden'); }
+
+  if (openBtn) openBtn.addEventListener('click', openModal);
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+  // Close modal on click outside
+  window.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  function handleInquirySubmit() {
+    const successBox = document.getElementById('modalSuccess');
+    if (successBox) {
+      successBox.classList.remove('hidden');
+      setTimeout(() => {
+        closeModal();
+        successBox.classList.add('hidden');
+        document.getElementById('inquiryForm').reset();
+      }, 1500);
+    }
+  }
+</script></main></div>
+
+
+
+
+
+</body></html>
