@@ -1,10 +1,28 @@
 # 🐻 Termy A/L ICT — Active Recall & Spaced Repetition Platform
 
 > **A fast-paced, utility-focused revision web app designed for Sri Lankan Advanced Level students to master syllabus MCQs through active recall, spaced repetition, and developer-grade speed.**
+> 
+> 🔗 **GitHub Repository:** [https://github.com/ManuthMethnidu/termy-al-ict](https://github.com/ManuthMethnidu/termy-al-ict)
 
 ---
 
-## ⚡ Overview
+## 📚 4 Core Question Bank Sections (2,636 MCQs)
+
+1. **🛤️ Section 1: Duolingo Syllabus Course (12 Units & 200+ Lessons)**
+   - Powered by `ict_duolingo_course.json`.
+   - Complete G.C.E. A/L ICT coverage: Units 1 to 12 broken down into bite-sized lessons (~12 questions each) with interactive lesson roadmap.
+
+2. **📖 Section 2: Subject-Wise Modules (Topic Mastery Drills)**
+   - Powered by `ict_subject_wise.json`.
+   - Deep-dive into 12 distinct subjects (Number Systems: 371 Qs, Logic Circuits: 328 Qs, Computer Architecture: 337 Qs, Python/PHP: 295 Qs, DBMS: 292 Qs, Operating Systems: 136 Qs, etc.).
+
+3. **⏱️ Section 3: Past Paper & Series Quizzes (265 Mock Exams)**
+   - Powered by `all_quizzes_combined_FIXED.json`.
+   - 265 organized past paper and exam-series quizzes ready for timed mock drills with real-time scoring.
+
+4. **🧠 Section 4: Master Question Repository & Active Recall (2,636 Qs)**
+   - Powered by `ict_question_bank.json`.
+   - Instant search across all 2,636 questions with subject & series filters, answer breakdowns, and direct integration with the **SM-2 Spaced Repetition queue**.
 
 Built around a clean, distraction-free terminal interface rather than cluttered ed-tech fluff, **Termy A/L ICT** turns high-volume question pools into focused daily drills.
 
