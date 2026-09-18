@@ -1,6 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserStats } from '../../types';
 import { sounds } from '../../lib/sound';
+import {
+  getSupabaseConfig,
+  saveSupabaseConfig,
+  testSupabaseConnection,
+} from '../../lib/supabase';
 
 interface SettingsViewProps {
   userStats: UserStats;
@@ -13,6 +18,91 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onUpdateStats,
   onOpenHelp,
 }) => {
+  // Supabase states
+  const [supabaseUrl, setSupabaseUrl] = useState<string>('');
+  const [supabaseKey, setSupabaseKey] = useState<string>('');
+  const [connectionStatus, setConnectionStatus] = useState<{
+    tested: boolean;
+    loading: boolean;
+    success: boolean;
+    message: string;
+    source: 'localStorage' | 'env' | 'none';
+  }>({
+    tested: false,
+    loading: false,
+    success: false,
+    message: '',
+    source: 'none',
+  });
+
+  useEffect(() => {
+    const config = getSupabaseConfig();
+    setSupabaseUrl(config.url);
+    setSupabaseKey(config.key);
+    setConnectionStatus((prev) => ({
+      ...prev,
+      source: config.source,
+      success: config.source !== 'none',
+    }));
+
+    if (config.url && config.key) {
+      testSupabaseConnection(config.url, config.key).then((res) => {
+        setConnectionStatus({
+          tested: true,
+          loading: false,
+          success: res.success,
+          message: res.message,
+          source: config.source,
+        });
+      });
+    }
+  }, []);
+
+  const handleTestAndSaveSupabase = async () => {
+    if (!supabaseUrl.trim() || !supabaseKey.trim()) {
+      alert('Please enter both Supabase Project URL and Anon Key.');
+      return;
+    }
+
+    setConnectionStatus((prev) => ({ ...prev, loading: true, tested: false }));
+    const result = await testSupabaseConnection(supabaseUrl.trim(), supabaseKey.trim());
+
+    if (result.success) {
+      sounds.playCorrect();
+      saveSupabaseConfig(supabaseUrl.trim(), supabaseKey.trim());
+      setConnectionStatus({
+        tested: true,
+        loading: false,
+        success: true,
+        message: result.message,
+        source: 'localStorage',
+      });
+    } else {
+      sounds.playIncorrect();
+      setConnectionStatus({
+        tested: true,
+        loading: false,
+        success: false,
+        message: result.message,
+        source: 'none',
+      });
+    }
+  };
+
+  const handleClearSupabase = () => {
+    saveSupabaseConfig('', '');
+    setSupabaseUrl('');
+    setSupabaseKey('');
+    setConnectionStatus({
+      tested: false,
+      loading: false,
+      success: false,
+      message: 'Disconnected. Termy is using local offline storage.',
+      source: 'none',
+    });
+    alert('Supabase credentials cleared. Switched to offline storage.');
+  };
+
   const toggleSound = () => {
     const next = !userStats.soundEnabled;
     sounds.setEnabled(next);
@@ -28,7 +118,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col w-full max-w-2xl mx-auto gap-8 pb-24 md:pb-12">
+    <div className="flex flex-col w-full max-w-2xl mx-auto gap-8 pb-24 md:pb-12 select-none">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-on-surface">Preferences & Settings</h1>
         <button
@@ -40,7 +130,114 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </button>
       </div>
 
-      {/* Account Info */}
+      {/* Supabase PostgreSQL Backend Integration Card */}
+      <section className="p-6 rounded-2xl bg-card-dark border-2 border-primary/40 flex flex-col gap-4 shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-primary/20 border border-primary/40 flex items-center justify-center text-primary font-bold">
+              <span className="material-symbols-outlined text-xl">database</span>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-on-surface">Supabase Cloud Database</h2>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1 ${
+                    connectionStatus.success
+                      ? 'bg-primary/20 text-primary border border-primary/30'
+                      : 'bg-lightning-gold/20 text-lightning-gold border border-lightning-gold/30'
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                  {connectionStatus.success ? 'Connected' : 'Local Offline Mode'}
+                </span>
+              </div>
+              <p className="text-xs text-text-muted">
+                Sync candidate XP, streaks, and Spaced Repetition queue to PostgreSQL.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Input fields */}
+        <div className="flex flex-col gap-3 pt-2">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-text-muted font-bold flex items-center justify-between">
+              <span>Project URL</span>
+              <span className="text-[10px] text-text-muted font-normal">
+                Supabase Dashboard &gt; Project Settings &gt; API
+              </span>
+            </label>
+            <input
+              type="text"
+              placeholder="https://xyzcompany.supabase.co"
+              value={supabaseUrl}
+              onChange={(e) => setSupabaseUrl(e.target.value)}
+              className="px-3.5 py-2.5 rounded-xl bg-surface-container border border-card-border text-xs text-on-surface focus:outline-none focus:border-primary font-mono"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-text-muted font-bold flex items-center justify-between">
+              <span>Anon Public Key</span>
+              <span className="text-[10px] text-text-muted font-normal">
+                anon / public API key
+              </span>
+            </label>
+            <input
+              type="password"
+              placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              value={supabaseKey}
+              onChange={(e) => setSupabaseKey(e.target.value)}
+              className="px-3.5 py-2.5 rounded-xl bg-surface-container border border-card-border text-xs text-on-surface focus:outline-none focus:border-primary font-mono"
+            />
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <button
+              onClick={handleTestAndSaveSupabase}
+              disabled={connectionStatus.loading}
+              className="px-5 py-2.5 bg-primary text-on-primary-fixed rounded-xl text-xs uppercase font-extrabold tracking-wider btn-pressable-primary flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-base">
+                {connectionStatus.loading ? 'sync' : 'link'}
+              </span>
+              <span>{connectionStatus.loading ? 'Testing...' : 'Test & Connect'}</span>
+            </button>
+
+            {connectionStatus.success && (
+              <button
+                onClick={handleClearSupabase}
+                className="px-4 py-2.5 bg-surface-container hover:bg-surface-variant text-text-muted hover:text-crimson-heart rounded-xl text-xs uppercase font-bold tracking-wider border border-card-border transition-colors"
+              >
+                Disconnect
+              </button>
+            )}
+
+            <span className="text-[11px] text-text-muted font-mono">
+              Schema file: <code className="text-primary">supabase/schema.sql</code>
+            </span>
+          </div>
+
+          {/* Message feedback */}
+          {connectionStatus.message && (
+            <div
+              className={`p-3 rounded-xl text-xs font-semibold flex items-start gap-2 border ${
+                connectionStatus.success
+                  ? 'bg-primary/10 border-primary/30 text-primary'
+                  : 'bg-crimson-heart/10 border-crimson-heart/30 text-crimson-heart'
+              }`}
+            >
+              <span className="material-symbols-outlined text-base shrink-0 mt-0.5">
+                {connectionStatus.success ? 'check_circle' : 'error'}
+              </span>
+              <span>{connectionStatus.message}</span>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Candidate Profile */}
       <section className="p-6 rounded-2xl bg-card-dark border border-card-border flex flex-col gap-4 shadow-sm">
         <h2 className="text-base font-bold text-on-surface uppercase tracking-wider text-primary">
           Candidate Profile
