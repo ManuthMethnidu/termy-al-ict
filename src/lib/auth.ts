@@ -11,6 +11,75 @@ export interface AuthProfile {
 }
 
 /**
+ * Clean OAuth tokens or query codes (?code=..., #access_token=...) from the browser URL cleanly
+ */
+export function cleanAuthUrl() {
+  if (typeof window === 'undefined') return;
+  try {
+    const url = new URL(window.location.href);
+    let changed = false;
+
+    if (url.searchParams.has('code')) {
+      url.searchParams.delete('code');
+      url.searchParams.delete('state');
+      changed = true;
+    }
+
+    if (url.searchParams.has('error') || url.searchParams.has('error_description')) {
+      url.searchParams.delete('error');
+      url.searchParams.delete('error_description');
+      changed = true;
+    }
+
+    if (
+      url.hash &&
+      (url.hash.includes('access_token=') ||
+        url.hash.includes('refresh_token=') ||
+        url.hash.includes('error='))
+    ) {
+      url.hash = '';
+      changed = true;
+    }
+
+    if (changed) {
+      const remainingSearch = url.searchParams.toString();
+      const cleanPath = url.pathname + (remainingSearch ? `?${remainingSearch}` : '') + (url.hash || '');
+      window.history.replaceState(null, '', cleanPath);
+    }
+  } catch (err) {
+    console.warn('Error cleaning auth URL:', err);
+  }
+}
+
+/**
+ * Handle initial PKCE code exchange or hash processing on app mount
+ */
+export async function handleAuthCallback(): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  const url = new URL(window.location.href);
+  const code = url.searchParams.get('code');
+
+  if (code) {
+    const client = getSupabaseClient();
+    if (client) {
+      try {
+        await client.auth.exchangeCodeForSession(code);
+      } catch (err) {
+        // May already be exchanged by Supabase internal client
+        console.debug('Code exchange handled:', err);
+      }
+    }
+    cleanAuthUrl();
+  } else if (
+    window.location.hash &&
+    (window.location.hash.includes('access_token=') || window.location.hash.includes('refresh_token='))
+  ) {
+    cleanAuthUrl();
+  }
+}
+
+/**
  * Trigger Supabase Google OAuth Sign-in
  */
 export async function signInWithGoogle(): Promise<{ error: Error | null }> {
@@ -137,20 +206,8 @@ export function onAuthStateChange(
 
   const { data: authListener } = client.auth.onAuthStateChange(
     (_event, session) => {
-      // Clean up OAuth hash tokens from the address bar once captured
-      if (typeof window !== 'undefined' && window.location.hash) {
-        if (
-          window.location.hash.includes('access_token=') ||
-          window.location.hash.includes('refresh_token=') ||
-          window.location.hash.includes('error=')
-        ) {
-          window.history.replaceState(
-            null,
-            '',
-            window.location.pathname + window.location.search
-          );
-        }
-      }
+      // Clean up OAuth hash tokens or ?code= from the address bar once captured
+      cleanAuthUrl();
       callback(session, session?.user ?? null);
     }
   );

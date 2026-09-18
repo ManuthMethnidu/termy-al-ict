@@ -19,7 +19,11 @@ import { LiveMcqDrill } from './components/drill/LiveMcqDrill';
 import { SYLLABUS_QUESTIONS } from './data/syllabusQuestions';
 import { getAllMasterQuestions } from './lib/questionBankLoader';
 import { syncUserStatsToSupabase } from './lib/supabase';
-import { onAuthStateChange, fetchUserProfile } from './lib/auth';
+import {
+  onAuthStateChange,
+  fetchUserProfile,
+  handleAuthCallback,
+} from './lib/auth';
 import { sounds } from './lib/sound';
 
 const INITIAL_STATS: UserStats = {
@@ -158,22 +162,9 @@ export const App: React.FC = () => {
   const [isGuidebookOpen, setIsGuidebookOpen] = useState<boolean>(false);
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
 
-  // Sync tab with browser URL and back/forward buttons, and clean OAuth hash fragments
+  // Sync tab with browser URL, back/forward buttons, and clean OAuth tokens or PKCE code
   useEffect(() => {
-    // If arriving from Google OAuth callback with tokens in hash, cleanly strip the hash
-    if (typeof window !== 'undefined' && window.location.hash) {
-      if (
-        window.location.hash.includes('access_token=') ||
-        window.location.hash.includes('refresh_token=') ||
-        window.location.hash.includes('error=')
-      ) {
-        window.history.replaceState(
-          null,
-          '',
-          window.location.pathname + window.location.search
-        );
-      }
-    }
+    handleAuthCallback();
 
     const onPopState = () => {
       setActiveTab(getTabFromLocation());
