@@ -27,28 +27,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [isMoreFamily]);
 
-  const navItems: { id: NavTab; label: string; icon: string }[] = [
-    { id: 'learn', label: 'Learn', icon: 'terminal' },
-    { id: 'questions', label: 'Q-Bank (2.6K)', icon: 'inventory_2' },
-    { id: 'practice', label: 'Practice', icon: 'code' },
-    { id: 'leaderboards', label: 'Leaderboards', icon: 'military_tech' },
-    { id: 'quests', label: 'Quests', icon: 'assignment' },
-    { id: 'shop', label: 'Shop', icon: 'shopping_bag' },
-    { id: 'profile', label: 'Profile', icon: 'badge' },
+  const navItems: { id: NavTab; label: string; icon: string; href: string }[] = [
+    { id: 'learn', label: 'Learn', icon: 'terminal', href: '/' },
+    { id: 'questions', label: 'Q-Bank (2.6K)', icon: 'inventory_2', href: '/questions' },
+    { id: 'practice', label: 'Practice', icon: 'code', href: '/practice' },
+    { id: 'leaderboards', label: 'Leaderboards', icon: 'military_tech', href: '/leaderboards' },
+    { id: 'quests', label: 'Quests', icon: 'assignment', href: '/quests' },
+    { id: 'shop', label: 'Shop', icon: 'shopping_bag', href: '/shop' },
+    { id: 'profile', label: 'Profile', icon: 'badge', href: '/profile' },
   ];
 
-  const moreSubItems: { id: NavTab; label: string; icon: string }[] = [
-    { id: 'more', label: 'Settings', icon: 'settings' },
-    { id: 'privacy', label: 'Privacy Policy', icon: 'verified_user' },
-    { id: 'terms', label: 'Terms of Service', icon: 'gavel' },
+  const moreSubItems: { id: NavTab; label: string; icon: string; href: string }[] = [
+    { id: 'more', label: 'Settings', icon: 'settings', href: '/settings' },
+    { id: 'privacy', label: 'Privacy Policy', icon: 'verified_user', href: '/privacy' },
+    { id: 'terms', label: 'Terms of Service', icon: 'gavel', href: '/terms' },
   ];
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-[#131f24] border-r-2 border-card-border z-40 hidden md:flex flex-col justify-between p-4 select-none">
       <div className="flex flex-col gap-5 overflow-y-auto overflow-x-hidden pr-1 scrollbar-thin scrollbar-thumb-card-border">
         {/* Brand Logo */}
-        <div
-          onClick={() => onSelectTab('learn')}
+        <a
+          href="/"
+          onClick={(e) => {
+            e.preventDefault();
+            onSelectTab('learn');
+          }}
           className="flex items-center gap-3 px-2 py-1 cursor-pointer group shrink-0"
         >
           <div className="w-10 h-10 rounded-xl bg-card-dark border-2 border-card-border flex items-center justify-center text-primary group-hover:scale-105 transition-transform shadow-md">
@@ -62,16 +66,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               A/L ICT ENGINE
             </span>
           </div>
-        </div>
+        </a>
 
         {/* Primary Navigation links */}
         <nav className="flex flex-col gap-1.5">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
-              <button
+              <a
                 key={item.id}
-                onClick={() => onSelectTab(item.id)}
+                href={item.href}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSelectTab(item.id);
+                }}
                 className={`flex items-center gap-4 px-4 py-3 uppercase tracking-wider text-sm font-extrabold transition-all rounded-xl text-left ${
                   isActive
                     ? 'border-2 border-primary bg-surface-container text-primary shadow-[0_3px_0_#46a302]'
@@ -80,7 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <span className="material-symbols-outlined text-2xl">{item.icon}</span>
                 <span>{item.label}</span>
-              </button>
+              </a>
             );
           })}
 
@@ -125,9 +133,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     (sub.id === 'more' && activeTab === 'settings');
 
                   return (
-                    <button
+                    <a
                       key={sub.id}
-                      onClick={() => onSelectTab(sub.id)}
+                      href={sub.href}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onSelectTab(sub.id);
+                      }}
                       className={`flex items-center gap-3 px-3 py-2 text-xs font-bold rounded-lg text-left transition-all ${
                         isSubActive
                           ? 'bg-primary/20 text-primary font-extrabold border border-primary/40 shadow-sm'
@@ -136,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     >
                       <span className="material-symbols-outlined text-lg">{sub.icon}</span>
                       <span className="truncate">{sub.label}</span>
-                    </button>
+                    </a>
                   );
                 })}
               </div>
@@ -203,26 +215,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Public Legal Quick Links */}
         <div className="px-2 pt-1 flex items-center justify-center gap-2 text-[10px] text-text-muted select-none">
-          <button
-            onClick={() => onSelectTab('privacy')}
+          <a
+            href="/privacy"
+            onClick={(e) => {
+              e.preventDefault();
+              onSelectTab('privacy');
+            }}
             className={`hover:text-primary transition-colors ${activeTab === 'privacy' ? 'text-primary font-bold' : ''}`}
           >
             Privacy
-          </button>
+          </a>
           <span>•</span>
-          <button
-            onClick={() => onSelectTab('terms')}
+          <a
+            href="/terms"
+            onClick={(e) => {
+              e.preventDefault();
+              onSelectTab('terms');
+            }}
             className={`hover:text-primary transition-colors ${activeTab === 'terms' ? 'text-primary font-bold' : ''}`}
           >
             Terms
-          </button>
+          </a>
           <span>•</span>
-          <button
-            onClick={() => onSelectTab('more')}
+          <a
+            href="/settings"
+            onClick={(e) => {
+              e.preventDefault();
+              onSelectTab('more');
+            }}
             className={`hover:text-primary transition-colors ${activeTab === 'more' ? 'text-primary font-bold' : ''}`}
           >
             Settings
-          </button>
+          </a>
         </div>
       </div>
     </aside>

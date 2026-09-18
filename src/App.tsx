@@ -45,8 +45,99 @@ const INITIAL_STATS: UserStats = {
   reviewedQuestionIds: [],
 };
 
+function getTabFromLocation(): NavTab {
+  if (typeof window === 'undefined') return 'learn';
+  const path = window.location.pathname.toLowerCase().replace(/\/+$/, '');
+  const hash = window.location.hash.toLowerCase().replace(/^#\/?/, '');
+  const searchParams = new URLSearchParams(window.location.search);
+  const tabParam = searchParams.get('tab') || searchParams.get('page');
+
+  if (
+    path === '/privacy' ||
+    path === '/privacy-policy' ||
+    hash === 'privacy' ||
+    hash === 'privacy-policy' ||
+    tabParam === 'privacy'
+  ) {
+    return 'privacy';
+  }
+
+  if (
+    path === '/terms' ||
+    path === '/terms-of-service' ||
+    hash === 'terms' ||
+    hash === 'terms-of-service' ||
+    tabParam === 'terms'
+  ) {
+    return 'terms';
+  }
+
+  if (path === '/settings' || hash === 'settings' || tabParam === 'settings' || tabParam === 'more') {
+    return 'more';
+  }
+
+  if (path === '/admin' || hash === 'admin' || tabParam === 'admin') {
+    return 'admin';
+  }
+
+  if (path === '/questions' || path === '/q-bank' || hash === 'questions') {
+    return 'questions';
+  }
+
+  if (path === '/practice' || hash === 'practice') {
+    return 'practice';
+  }
+
+  if (path === '/leaderboards' || hash === 'leaderboards') {
+    return 'leaderboards';
+  }
+
+  if (path === '/quests' || hash === 'quests') {
+    return 'quests';
+  }
+
+  if (path === '/shop' || hash === 'shop') {
+    return 'shop';
+  }
+
+  if (path === '/profile' || hash === 'profile') {
+    return 'profile';
+  }
+
+  return 'learn';
+}
+
+function getUrlForTab(tab: NavTab): string {
+  switch (tab) {
+    case 'privacy':
+      return '/privacy';
+    case 'terms':
+      return '/terms';
+    case 'more':
+    case 'settings':
+      return '/settings';
+    case 'admin':
+      return '/admin';
+    case 'questions':
+      return '/questions';
+    case 'practice':
+      return '/practice';
+    case 'leaderboards':
+      return '/leaderboards';
+    case 'quests':
+      return '/quests';
+    case 'shop':
+      return '/shop';
+    case 'profile':
+      return '/profile';
+    case 'learn':
+    default:
+      return '/';
+  }
+}
+
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<NavTab>('learn');
+  const [activeTab, setActiveTab] = useState<NavTab>(() => getTabFromLocation());
   const [userStats, setUserStats] = useState<UserStats>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('termy_user_stats');
@@ -66,6 +157,59 @@ export const App: React.FC = () => {
   const [drillQuestions, setDrillQuestions] = useState<McqQuestion[]>(SYLLABUS_QUESTIONS);
   const [isGuidebookOpen, setIsGuidebookOpen] = useState<boolean>(false);
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
+
+  // Sync tab with browser URL and back/forward buttons
+  useEffect(() => {
+    const onPopState = () => {
+      setActiveTab(getTabFromLocation());
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  // Sync document title dynamically
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (activeTab === 'privacy') {
+      document.title = 'Privacy Policy — Termy A/L ICT';
+    } else if (activeTab === 'terms') {
+      document.title = 'Terms of Service — Termy A/L ICT';
+    } else if (activeTab === 'more' || activeTab === 'settings') {
+      document.title = 'Settings & Preferences — Termy A/L ICT';
+    } else if (activeTab === 'admin') {
+      document.title = 'Root Admin Terminal — Termy';
+    } else if (activeTab === 'questions') {
+      document.title = 'MCQ Question Bank — Termy A/L ICT';
+    } else if (activeTab === 'practice') {
+      document.title = 'Practice Hub — Termy A/L ICT';
+    } else if (activeTab === 'leaderboards') {
+      document.title = 'National Leaderboards — Termy A/L ICT';
+    } else if (activeTab === 'quests') {
+      document.title = 'Daily Quests — Termy A/L ICT';
+    } else if (activeTab === 'shop') {
+      document.title = 'Termy Shop — Bits & Lives';
+    } else if (activeTab === 'profile') {
+      document.title = 'Candidate Profile — Termy A/L ICT';
+    } else {
+      document.title = 'Termy A/L ICT — Active Recall & Spaced Repetition';
+    }
+  }, [activeTab]);
+
+  const handleSelectTab = (tab: NavTab, replace = false) => {
+    sounds.playClick();
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      const targetUrl = getUrlForTab(tab);
+      const currentNormalized = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+      if (currentNormalized !== targetUrl) {
+        if (replace) {
+          window.history.replaceState({ tab }, '', targetUrl);
+        } else {
+          window.history.pushState({ tab }, '', targetUrl);
+        }
+      }
+    }
+  };
 
   // Load master questions from real question bank on mount
   useEffect(() => {
@@ -157,10 +301,7 @@ export const App: React.FC = () => {
       {/* Sidebar Navigation (Desktop) */}
       <Sidebar
         activeTab={activeTab}
-        onSelectTab={(tab) => {
-          sounds.playClick();
-          setActiveTab(tab);
-        }}
+        onSelectTab={handleSelectTab}
         userStats={userStats}
       />
 
@@ -170,10 +311,7 @@ export const App: React.FC = () => {
         <Header
           userStats={userStats}
           activeTab={activeTab}
-          onSelectTab={(tab) => {
-            sounds.playClick();
-            setActiveTab(tab);
-          }}
+          onSelectTab={handleSelectTab}
           onStartPractice={handleStartLesson}
         />
 
@@ -184,7 +322,7 @@ export const App: React.FC = () => {
               userStats={userStats}
               onStartLesson={handleStartLesson}
               onOpenGuidebook={() => setIsGuidebookOpen(true)}
-              onSelectTab={setActiveTab}
+              onSelectTab={handleSelectTab}
             />
           )}
 
@@ -225,34 +363,25 @@ export const App: React.FC = () => {
               userStats={userStats}
               onUpdateStats={handleUpdateStats}
               onOpenHelp={() => setIsHelpOpen(true)}
-              onOpenAdmin={() => setActiveTab('admin')}
-              onNavigate={(tab) => {
-                sounds.playClick();
-                setActiveTab(tab);
-              }}
+              onOpenAdmin={() => handleSelectTab('admin')}
+              onNavigate={handleSelectTab}
             />
           )}
 
           {activeTab === 'privacy' && (
             <PrivacyPolicyView
-              onNavigate={(tab) => {
-                sounds.playClick();
-                setActiveTab(tab);
-              }}
+              onNavigate={handleSelectTab}
             />
           )}
 
           {activeTab === 'terms' && (
             <TermsOfServiceView
-              onNavigate={(tab) => {
-                sounds.playClick();
-                setActiveTab(tab);
-              }}
+              onNavigate={handleSelectTab}
             />
           )}
 
           {activeTab === 'admin' && (
-            <AdminPanelView onExit={() => setActiveTab('learn')} />
+            <AdminPanelView onExit={() => handleSelectTab('learn')} />
           )}
         </main>
       </div>

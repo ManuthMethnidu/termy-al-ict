@@ -155,8 +155,10 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                 </div>
 
-                <button
-                  onClick={() => {
+                <a
+                  href="/profile"
+                  onClick={(e) => {
+                    e.preventDefault();
                     setShowUserMenu(false);
                     onSelectTab('profile');
                   }}
@@ -164,10 +166,12 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <span className="material-symbols-outlined text-base">badge</span>
                   <span>View Profile</span>
-                </button>
+                </a>
 
-                <button
-                  onClick={() => {
+                <a
+                  href="/settings"
+                  onClick={(e) => {
+                    e.preventDefault();
                     setShowUserMenu(false);
                     onSelectTab('more');
                   }}
@@ -175,10 +179,12 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <span className="material-symbols-outlined text-base">settings</span>
                   <span>Settings & Preferences</span>
-                </button>
+                </a>
 
-                <button
-                  onClick={() => {
+                <a
+                  href="/privacy"
+                  onClick={(e) => {
+                    e.preventDefault();
                     setShowUserMenu(false);
                     onSelectTab('privacy');
                   }}
@@ -186,10 +192,12 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <span className="material-symbols-outlined text-base">verified_user</span>
                   <span>Privacy Policy</span>
-                </button>
+                </a>
 
-                <button
-                  onClick={() => {
+                <a
+                  href="/terms"
+                  onClick={(e) => {
+                    e.preventDefault();
                     setShowUserMenu(false);
                     onSelectTab('terms');
                   }}
@@ -197,7 +205,7 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <span className="material-symbols-outlined text-base">gavel</span>
                   <span>Terms of Service</span>
-                </button>
+                </a>
 
                 <button
                   onClick={handleSignOut}

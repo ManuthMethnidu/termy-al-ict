@@ -22,32 +22,44 @@ export const PrivacyPolicyView: React.FC<PrivacyPolicyViewProps> = ({ onNavigate
       {/* Top Breadcrumb & Navigation */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-6 mb-8 border-b border-card-border/60">
         <div className="flex items-center gap-2 text-sm text-text-muted select-none">
-          <button
-            onClick={() => onNavigate('learn')}
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              onNavigate('learn');
+            }}
             className="hover:text-primary transition-colors flex items-center gap-1 font-semibold"
           >
             <span className="material-symbols-outlined text-base">arrow_back</span>
             <span>Dashboard</span>
-          </button>
+          </a>
           <span>/</span>
           <span className="text-on-surface font-semibold">Privacy Policy</span>
         </div>
 
         <div className="flex items-center gap-2 select-none">
-          <button
-            onClick={() => onNavigate('terms')}
+          <a
+            href="/terms"
+            onClick={(e) => {
+              e.preventDefault();
+              onNavigate('terms');
+            }}
             className="px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-variant border border-card-border text-xs font-bold text-on-surface transition-all flex items-center gap-1.5"
           >
             <span className="material-symbols-outlined text-sm">gavel</span>
             <span>Terms of Service</span>
-          </button>
-          <button
-            onClick={() => onNavigate('more')}
+          </a>
+          <a
+            href="/settings"
+            onClick={(e) => {
+              e.preventDefault();
+              onNavigate('more');
+            }}
             className="px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-variant border border-card-border text-xs font-bold text-text-muted hover:text-on-surface transition-all flex items-center gap-1.5"
           >
             <span className="material-symbols-outlined text-sm">settings</span>
             <span>Settings</span>
-          </button>
+          </a>
         </div>
       </div>
 
@@ -63,6 +75,9 @@ export const PrivacyPolicyView: React.FC<PrivacyPolicyViewProps> = ({ onNavigate
               <div className="flex flex-wrap items-center gap-2 mb-1.5">
                 <span className="px-2.5 py-0.5 rounded-full bg-primary/20 text-primary font-mono text-[11px] font-extrabold uppercase tracking-wider border border-primary/30">
                   Public Legal Document
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-surface-container text-text-muted font-mono text-[11px] border border-card-border">
+                  URL: /privacy
                 </span>
                 <span className="text-xs text-text-muted font-mono">
                   Effective: September 2026
@@ -378,28 +393,40 @@ export const PrivacyPolicyView: React.FC<PrivacyPolicyViewProps> = ({ onNavigate
 
       {/* Bottom Navigation Switcher */}
       <div className="mt-12 pt-6 border-t border-card-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-muted select-none">
-        <button
-          onClick={() => onNavigate('learn')}
+        <a
+          href="/"
+          onClick={(e) => {
+            e.preventDefault();
+            onNavigate('learn');
+          }}
           className="hover:text-primary transition-colors flex items-center gap-1.5 font-bold"
         >
           <span className="material-symbols-outlined text-base">arrow_back</span>
           <span>Return to ICT Dashboard</span>
-        </button>
+        </a>
 
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => onNavigate('terms')}
+          <a
+            href="/terms"
+            onClick={(e) => {
+              e.preventDefault();
+              onNavigate('terms');
+            }}
             className="hover:text-primary transition-colors font-bold underline underline-offset-4"
           >
-            Review Terms of Service
-          </button>
+            Review Terms of Service (/terms)
+          </a>
           <span>•</span>
-          <button
-            onClick={() => onNavigate('more')}
+          <a
+            href="/settings"
+            onClick={(e) => {
+              e.preventDefault();
+              onNavigate('more');
+            }}
             className="hover:text-primary transition-colors font-bold"
           >
             Settings & Preferences
-          </button>
+          </a>
         </div>
       </div>
     </div>
