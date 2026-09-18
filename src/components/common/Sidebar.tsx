@@ -71,16 +71,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => onSelectTab('profile')}
         className="border-t-2 border-card-border pt-4 px-2 flex items-center justify-between cursor-pointer hover:bg-surface-container-low/60 rounded-xl transition-colors p-2"
       >
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold shadow">
-            <span className="material-symbols-outlined text-xl">person</span>
-          </div>
+        <div className="flex items-center gap-3 min-w-0">
+          {userStats.avatarUrl ? (
+            <img
+              src={userStats.avatarUrl}
+              alt={userStats.name}
+              className="w-9 h-9 rounded-full object-cover ring-2 ring-primary/50 shadow shrink-0"
+            />
+          ) : (
+            <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold shadow shrink-0">
+              <span className="material-symbols-outlined text-xl">person</span>
+            </div>
+          )}
           <div className="flex flex-col min-w-0">
-            <span className="text-sm font-bold text-on-surface truncate leading-tight">
-              {userStats.name}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-bold text-on-surface truncate leading-tight">
+                {userStats.name}
+              </span>
+              {userStats.authProvider === 'google' && (
+                <span className="w-2 h-2 rounded-full bg-primary shrink-0" title="Google Verified Account" />
+              )}
+            </div>
             <span className="text-[11px] text-text-muted truncate">
-              {userStats.batch}
+              {userStats.authProvider === 'google' ? 'Google Account' : userStats.batch}
             </span>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserStats, McqQuestion } from '../../types';
 import { getQueueStats, getDueQuestions, getTrickyQuestions } from '../../lib/spacedRepetition';
+import { getAllMasterQuestions } from '../../lib/questionBankLoader';
 import { SYLLABUS_QUESTIONS } from '../../data/syllabusQuestions';
 
 interface PracticeHubProps {
@@ -12,39 +13,74 @@ export const PracticeHubView: React.FC<PracticeHubProps> = ({
   userStats,
   onStartCustomDrill,
 }) => {
+  const [allQuestions, setAllQuestions] = useState<McqQuestion[]>(SYLLABUS_QUESTIONS);
+  const [loading, setLoading] = useState<boolean>(true);
   const [stats, setStats] = useState({
-    dueCount: 3,
-    masteredCount: 14,
-    learningCount: 8,
-    accuracyRate: 92,
+    dueCount: 0,
+    masteredCount: 0,
+    learningCount: 0,
+    accuracyRate: 100,
   });
 
   useEffect(() => {
-    const queueStats = getQueueStats(SYLLABUS_QUESTIONS);
-    setStats(queueStats);
+    let isMounted = true;
+    getAllMasterQuestions().then((questions) => {
+      if (isMounted) {
+        setAllQuestions(questions);
+        const queueStats = getQueueStats(questions);
+        setStats(queueStats);
+        setLoading(false);
+      }
+    }).catch(() => {
+      if (isMounted) {
+        const queueStats = getQueueStats(SYLLABUS_QUESTIONS);
+        setStats(queueStats);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
+  const sampleQuestions = (pool: McqQuestion[], count: number = 5): McqQuestion[] => {
+    if (pool.length <= count) return pool;
+    const shuffled = [...pool].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  };
+
   const handleStartDueReview = () => {
-    const due = getDueQuestions(SYLLABUS_QUESTIONS);
+    const due = getDueQuestions(allQuestions);
     if (due.length > 0) {
-      onStartCustomDrill(due);
+      onStartCustomDrill(sampleQuestions(due, 8));
     } else {
-      // If none due, practice tricky or all
-      onStartCustomDrill(SYLLABUS_QUESTIONS.slice(0, 5));
+      onStartCustomDrill(sampleQuestions(allQuestions, 5));
     }
   };
 
   const handleStartTrickyDrill = () => {
-    const tricky = getTrickyQuestions(SYLLABUS_QUESTIONS);
+    const tricky = getTrickyQuestions(allQuestions);
     if (tricky.length > 0) {
-      onStartCustomDrill(tricky);
+      onStartCustomDrill(sampleQuestions(tricky, 8));
     } else {
-      onStartCustomDrill(SYLLABUS_QUESTIONS.filter((q) => q.difficulty === 'hard'));
+      const hardQuestions = allQuestions.filter((q) => q.difficulty === 'hard');
+      onStartCustomDrill(sampleQuestions(hardQuestions.length > 0 ? hardQuestions : allQuestions, 5));
     }
   };
 
+  const handleStartUnitDrill = (unitNumber: number) => {
+    const unitPool = allQuestions.filter((q) => q.unit === unitNumber);
+    onStartCustomDrill(sampleQuestions(unitPool.length > 0 ? unitPool : allQuestions, 6));
+  };
+
+  const unit3Count = allQuestions.filter((q) => q.unit === 3).length;
+  const unit6Count = allQuestions.filter((q) => q.unit === 6).length;
+  const unit7Count = allQuestions.filter((q) => q.unit === 7).length;
+  const unit9Count = allQuestions.filter((q) => q.unit === 9).length;
+
   return (
-    <div className="flex flex-col w-full max-w-4xl mx-auto gap-8 pb-24 md:pb-12">
+    <div className="flex flex-col w-full max-w-4xl mx-auto gap-8 pb-24 md:pb-12 select-none">
       {/* Top Banner: Past Paper Review Drills */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-card-dark via-surface-container-high to-surface-container p-6 sm:p-8 border border-card-border/60 shadow-xl">
         <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-secondary/10 blur-3xl pointer-events-none" />
@@ -58,138 +94,109 @@ export const PracticeHubView: React.FC<PracticeHubProps> = ({
                 <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: '"FILL" 1' }}>
                   bolt
                 </span>
-                SPACED RECALL ENGINE
+                <span>Active Recall Engine</span>
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-on-surface">
-              Past Paper Review Drills
+              A/L Past Paper Rapid Drills
             </h2>
-            <p className="text-sm text-text-muted max-w-lg leading-relaxed">
-              Zero-in on official G.C.E. A/L past paper patterns (2015–2024). Train targeted algorithmic speed, decode scheme rubrics, and master high-frequency traps.
+            <p className="text-xs sm:text-sm text-text-muted max-w-lg leading-relaxed">
+              Target tricky questions from 2,636 verified G.C.E. Advanced Level MCQs. Keep your {userStats.streakDays}-day streak going with active recall!
             </p>
-            <div className="pt-2 flex flex-wrap items-center gap-4">
-              <button
-                onClick={() => onStartCustomDrill(SYLLABUS_QUESTIONS)}
-                className="px-6 py-2.5 bg-secondary text-on-secondary rounded-xl text-xs uppercase font-extrabold tracking-wider shadow-md hover:brightness-110 active:translate-y-0.5 transition-all btn-pressable-secondary"
-              >
-                Launch All 2015-2024 Drills
-              </button>
-              <span className="text-xs text-text-muted flex items-center gap-1 font-mono">
-                <span className="material-symbols-outlined text-sm text-primary">verified</span>
-                100% Verified Scheme Solutions • {userStats.streakDays} Day Streak
-              </span>
-            </div>
           </div>
 
-          {/* Glowing CPU/Micro-architecture Vector Accent */}
-          <div className="w-40 h-40 shrink-0 flex items-center justify-center relative">
-            <div className="absolute inset-0 rounded-2xl bg-secondary/10 rotate-6" />
-            <div className="w-36 h-36 rounded-2xl bg-surface-container-lowest p-3 flex flex-col justify-between border border-card-border shadow-xl">
-              <div className="flex items-center justify-between text-secondary">
-                <span className="material-symbols-outlined text-xl">memory</span>
-                <span className="font-mono text-[10px] tracking-widest text-text-muted">A/L ICT 2024</span>
-              </div>
-              <svg className="w-full h-16 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 100 50">
-                <path className="opacity-40" d="M 10 25 L 30 25 L 45 10 L 75 10 L 90 25" strokeDasharray="2 2" strokeWidth="2" />
-                <path className="opacity-40" d="M 10 25 L 30 25 L 45 40 L 75 40 L 90 25" strokeDasharray="2 2" strokeWidth="2" />
-                <circle className="fill-card-dark stroke-secondary" cx="50" cy="25" r="8" strokeWidth="2" />
-                <circle className="fill-primary stroke-none" cx="50" cy="25" r="3" />
-              </svg>
-              <div className="flex justify-between items-center text-[10px] font-mono text-primary font-bold">
-                <span>QUEUE: SYNCED</span>
-                <span className="text-lightning-gold">50/50 MCQ</span>
-              </div>
-            </div>
-          </div>
+          <button
+            onClick={() => onStartCustomDrill(sampleQuestions(allQuestions, 8))}
+            className="w-full md:w-auto px-6 py-3.5 bg-primary text-on-primary-fixed rounded-xl text-xs uppercase font-extrabold tracking-wider btn-pressable-primary flex items-center justify-center gap-2 shrink-0 shadow-lg"
+          >
+            <span className="material-symbols-outlined text-lg">play_arrow</span>
+            <span>Launch Quick 8-MCQ Drill</span>
+          </button>
         </div>
       </section>
 
-      {/* Spaced Repetition Active Queue Strip */}
+      {/* Spaced Repetition Overview Matrix */}
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-2xl">autorenew</span>
-            <h3 className="text-xl font-bold text-on-surface">Active Recall & Spaced Repetition Queue</h3>
+            <h3 className="text-xl font-bold text-on-surface">Spaced Repetition Memory Matrix</h3>
           </div>
-          <span className="text-xs text-text-muted font-mono">Algorithm: SuperMemo SM-2</span>
+          <span className="text-xs text-text-muted font-mono">
+            {loading ? 'Indexing 2.6K items...' : `${allQuestions.length} Questions Indexed`}
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Due for Review Card */}
-          <div className="p-5 rounded-2xl bg-card-dark border-2 border-primary/50 flex flex-col justify-between gap-4 shadow-md">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs uppercase font-extrabold text-primary tracking-wider">
-                  Due For Review
-                </span>
-                <span className="w-3 h-3 rounded-full bg-primary animate-ping" />
-              </div>
-              <div className="text-3xl font-extrabold text-on-surface font-mono">
-                {stats.dueCount} <span className="text-sm text-text-muted font-sans">Questions</span>
-              </div>
-              <p className="text-xs text-text-muted mt-1">
-                Questions ready at their optimal memory retention boundary.
-              </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div
+            onClick={handleStartDueReview}
+            className="p-4 rounded-2xl bg-card-dark border border-card-border hover:border-primary/50 cursor-pointer transition-all hover:bg-surface-variant group shadow-sm"
+          >
+            <div className="flex items-center justify-between text-text-muted mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Due Today</span>
+              <span className="material-symbols-outlined text-primary group-hover:rotate-45 transition-transform text-xl">
+                schedule
+              </span>
             </div>
-            <button
-              onClick={handleStartDueReview}
-              className="w-full py-2.5 bg-primary text-on-primary-fixed rounded-xl text-xs uppercase font-extrabold tracking-wider btn-pressable-primary"
-            >
-              Clear Due Queue →
-            </button>
+            <div className="text-2xl sm:text-3xl font-extrabold font-mono text-on-surface">
+              {stats.dueCount}
+            </div>
+            <span className="text-[11px] text-primary font-bold mt-1 inline-block">
+              Review Queue →
+            </span>
           </div>
 
-          {/* Tricky Questions / Mistake Box */}
-          <div className="p-5 rounded-2xl bg-card-dark border border-card-border flex flex-col justify-between gap-4 shadow-md">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs uppercase font-extrabold text-crimson-heart tracking-wider">
-                  Mistake Recycler
-                </span>
-                <span className="material-symbols-outlined text-crimson-heart text-lg">warning</span>
-              </div>
-              <div className="text-3xl font-extrabold text-on-surface font-mono">
-                {stats.learningCount} <span className="text-sm text-text-muted font-sans">Concepts</span>
-              </div>
-              <p className="text-xs text-text-muted mt-1">
-                Syllabus items with recent errors cycled back for repetition.
-              </p>
+          <div
+            onClick={handleStartTrickyDrill}
+            className="p-4 rounded-2xl bg-card-dark border border-card-border hover:border-crimson-heart/50 cursor-pointer transition-all hover:bg-surface-variant group shadow-sm"
+          >
+            <div className="flex items-center justify-between text-text-muted mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Tricky / Missed</span>
+              <span className="material-symbols-outlined text-crimson-heart group-hover:scale-110 transition-transform text-xl">
+                warning
+              </span>
             </div>
-            <button
-              onClick={handleStartTrickyDrill}
-              className="w-full py-2.5 bg-surface-container hover:bg-surface-variant text-crimson-heart border border-crimson-heart/40 rounded-xl text-xs uppercase font-extrabold tracking-wider transition-all"
-            >
-              Drill Mistakes Only
-            </button>
+            <div className="text-2xl sm:text-3xl font-extrabold font-mono text-crimson-heart">
+              {getTrickyQuestions(allQuestions).length}
+            </div>
+            <span className="text-[11px] text-crimson-heart font-bold mt-1 inline-block">
+              Target Traps →
+            </span>
           </div>
 
-          {/* Mastered Long-Term Retention */}
-          <div className="p-5 rounded-2xl bg-card-dark border border-card-border flex flex-col justify-between gap-4 shadow-md">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs uppercase font-extrabold text-secondary tracking-wider">
-                  Long-Term Retention
-                </span>
-                <span className="material-symbols-outlined text-secondary text-lg">military_tech</span>
-              </div>
-              <div className="text-3xl font-extrabold text-on-surface font-mono">
-                {stats.masteredCount} <span className="text-sm text-text-muted font-sans">Locked In</span>
-              </div>
-              <p className="text-xs text-text-muted mt-1">
-                Achieved 3+ consecutive correct intervals (Interval &gt; 3 days).
-              </p>
+          <div className="p-4 rounded-2xl bg-card-dark border border-card-border shadow-sm">
+            <div className="flex items-center justify-between text-text-muted mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Mastered</span>
+              <span className="material-symbols-outlined text-lightning-gold text-xl">
+                verified
+              </span>
             </div>
-            <div className="w-full h-2.5 bg-surface-container-high rounded-full overflow-hidden">
-              <div
-                className="h-full bg-secondary rounded-full"
-                style={{ width: `${Math.min(100, (stats.masteredCount / 20) * 100)}%` }}
-              />
+            <div className="text-2xl sm:text-3xl font-extrabold font-mono text-lightning-gold">
+              {stats.masteredCount}
             </div>
+            <span className="text-[11px] text-text-muted font-mono mt-1 inline-block">
+              Consecutive 3+ Correct
+            </span>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-card-dark border border-card-border shadow-sm">
+            <div className="flex items-center justify-between text-text-muted mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Accuracy</span>
+              <span className="material-symbols-outlined text-secondary text-xl">
+                trending_up
+              </span>
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold font-mono text-secondary">
+              {stats.accuracyRate}%
+            </div>
+            <span className="text-[11px] text-text-muted font-mono mt-1 inline-block">
+              Live Drill Success
+            </span>
           </div>
         </div>
       </section>
 
-      {/* Targeted Syllabus Module Drills */}
+      {/* Targeted Unit MCQ Drills */}
       <section className="flex flex-col gap-4">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-lightning-gold text-2xl">target</span>
@@ -197,20 +204,20 @@ export const PracticeHubView: React.FC<PracticeHubProps> = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Unit 3 */}
+          {/* Unit 3: Digital Electronics */}
           <div
-            onClick={() => onStartCustomDrill(SYLLABUS_QUESTIONS.filter((q) => q.unit === 3))}
+            onClick={() => handleStartUnitDrill(3)}
             className="p-5 rounded-2xl bg-card-dark border border-card-border hover:border-primary/60 cursor-pointer transition-all hover:bg-surface-variant group shadow-md"
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-mono font-bold text-primary">UNIT 03</span>
-              <span className="text-xs text-text-muted font-mono">5 Questions</span>
+              <span className="text-xs text-text-muted font-mono">{unit3Count} Questions</span>
             </div>
             <h4 className="font-bold text-base text-on-surface group-hover:text-primary transition-colors">
               Digital Logic Gates & Boolean Algebra
             </h4>
             <p className="text-xs text-text-muted mt-1 mb-3">
-              XOR/XNOR, K-maps, Half/Full Adders, NAND universality.
+              XOR/XNOR, K-maps, Half/Full Adders, De Morgan laws, NAND universality.
             </p>
             <div className="flex items-center text-xs font-bold text-primary gap-1">
               <span>Start Unit Practice</span>
@@ -218,41 +225,20 @@ export const PracticeHubView: React.FC<PracticeHubProps> = ({
             </div>
           </div>
 
-          {/* Unit 5 */}
+          {/* Unit 6: Programming Concepts */}
           <div
-            onClick={() => onStartCustomDrill(SYLLABUS_QUESTIONS.filter((q) => q.unit === 5))}
-            className="p-5 rounded-2xl bg-card-dark border border-card-border hover:border-secondary/60 cursor-pointer transition-all hover:bg-surface-variant group shadow-md"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-mono font-bold text-secondary">UNIT 05</span>
-              <span className="text-xs text-text-muted font-mono">4 Questions</span>
-            </div>
-            <h4 className="font-bold text-base text-on-surface group-hover:text-secondary transition-colors">
-              Networking & OSI 7-Layer Model
-            </h4>
-            <p className="text-xs text-text-muted mt-1 mb-3">
-              CIDR Subnetting, MAC/IP routing, TCP vs UDP, Protocols.
-            </p>
-            <div className="flex items-center text-xs font-bold text-secondary gap-1">
-              <span>Start Unit Practice</span>
-              <span className="material-symbols-outlined text-sm">arrow_forward</span>
-            </div>
-          </div>
-
-          {/* Unit 8 */}
-          <div
-            onClick={() => onStartCustomDrill(SYLLABUS_QUESTIONS.filter((q) => q.unit === 8))}
+            onClick={() => handleStartUnitDrill(6)}
             className="p-5 rounded-2xl bg-card-dark border border-card-border hover:border-lightning-gold/60 cursor-pointer transition-all hover:bg-surface-variant group shadow-md"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-mono font-bold text-lightning-gold">UNIT 08</span>
-              <span className="text-xs text-text-muted font-mono">6 Questions</span>
+              <span className="text-xs font-mono font-bold text-lightning-gold">UNIT 06</span>
+              <span className="text-xs text-text-muted font-mono">{unit6Count} Questions</span>
             </div>
             <h4 className="font-bold text-base text-on-surface group-hover:text-lightning-gold transition-colors">
               Algorithms & Python Programming
             </h4>
             <p className="text-xs text-text-muted mt-1 mb-3">
-              Loops, integer division traps, recursions, lists, dictionaries.
+              Loops, integer division, trace tables, recursions, lists, dictionaries.
             </p>
             <div className="flex items-center text-xs font-bold text-lightning-gold gap-1">
               <span>Start Unit Practice</span>
@@ -260,22 +246,43 @@ export const PracticeHubView: React.FC<PracticeHubProps> = ({
             </div>
           </div>
 
-          {/* Unit 6 */}
+          {/* Unit 7: Database Management */}
           <div
-            onClick={() => onStartCustomDrill(SYLLABUS_QUESTIONS.filter((q) => q.unit === 6))}
+            onClick={() => handleStartUnitDrill(7)}
             className="p-5 rounded-2xl bg-card-dark border border-card-border hover:border-pink-400/60 cursor-pointer transition-all hover:bg-surface-variant group shadow-md"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-mono font-bold text-pink-400">UNIT 06</span>
-              <span className="text-xs text-text-muted font-mono">4 Questions</span>
+              <span className="text-xs font-mono font-bold text-pink-400">UNIT 07</span>
+              <span className="text-xs text-text-muted font-mono">{unit7Count} Questions</span>
             </div>
             <h4 className="font-bold text-base text-on-surface group-hover:text-pink-400 transition-colors">
-              Database Management Systems
+              Database Management Systems (DBMS)
             </h4>
             <p className="text-xs text-text-muted mt-1 mb-3">
-              1NF/2NF/3NF Normalization, ER diagrams, SQL queries.
+              1NF/2NF/3NF Normalization, ER diagrams, foreign keys, SQL queries.
             </p>
             <div className="flex items-center text-xs font-bold text-pink-400 gap-1">
+              <span>Start Unit Practice</span>
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </div>
+          </div>
+
+          {/* Unit 9: Networking */}
+          <div
+            onClick={() => handleStartUnitDrill(9)}
+            className="p-5 rounded-2xl bg-card-dark border border-card-border hover:border-secondary/60 cursor-pointer transition-all hover:bg-surface-variant group shadow-md"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-mono font-bold text-secondary">UNIT 09</span>
+              <span className="text-xs text-text-muted font-mono">{unit9Count} Questions</span>
+            </div>
+            <h4 className="font-bold text-base text-on-surface group-hover:text-secondary transition-colors">
+              Data Communication & Networking
+            </h4>
+            <p className="text-xs text-text-muted mt-1 mb-3">
+              CIDR Subnetting, MAC/IP routing, TCP vs UDP, OSI 7-layer protocols.
+            </p>
+            <div className="flex items-center text-xs font-bold text-secondary gap-1">
               <span>Start Unit Practice</span>
               <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </div>

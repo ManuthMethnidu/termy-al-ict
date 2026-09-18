@@ -1,18 +1,45 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { UserStats } from '../../types';
+import { getRealUnitMastery, getLocalAttempts } from '../../lib/supabase';
+import { signInWithGoogle, signOut } from '../../lib/auth';
 
 interface ProfileViewProps {
   userStats: UserStats;
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ userStats }) => {
+  const [authLoading, setAuthLoading] = useState(false);
+  const unitMasteries = getRealUnitMastery();
+  const attempts = getLocalAttempts();
+
+  const totalAttempted = attempts.length;
+  const totalCorrect = attempts.filter((a) => a.isCorrect).length;
+  const overallAccuracy = totalAttempted > 0 ? Math.round((totalCorrect / totalAttempted) * 100) : 0;
+
+  const handleGoogleAuth = async () => {
+    setAuthLoading(true);
+    const { error } = await signInWithGoogle();
+    setAuthLoading(false);
+    if (error) {
+      alert(error.message);
+    }
+  };
+
+  const handleSignOut = async () => {
+    setAuthLoading(true);
+    await signOut();
+    setAuthLoading(false);
+    window.location.reload();
+  };
+
+  const isGoogleUser = userStats.authProvider === 'google';
+
   return (
     <div className="flex flex-col w-full max-w-3xl mx-auto gap-8 pb-24 md:pb-12">
       {/* Profile Hero & Avatar Banner */}
       <div className="relative w-full rounded-2xl bg-surface-container overflow-hidden border border-card-border/60 shadow-md">
         {/* Top Terminal Graphic Backdrop */}
         <div className="relative w-full h-44 bg-surface-container-high flex items-center justify-center overflow-hidden">
-          {/* Dot array pattern */}
           <svg className="absolute inset-0 w-full h-full text-card-border/40" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <pattern height="24" id="grid-pattern" patternUnits="userSpaceOnUse" width="24">
@@ -23,23 +50,19 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ userStats }) => {
           </svg>
           <div className="absolute inset-0 bg-gradient-to-t from-surface-container via-transparent to-surface-container-high/30" />
 
-          {/* Centered Developer / Tech Avatar */}
+          {/* Centered Avatar */}
           <div className="relative z-10 flex flex-col items-center justify-end h-full pt-4">
-            <svg className="w-36 h-36 drop-shadow-lg" fill="none" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="80" cy="65" fill="#202c31" r="42" />
-              <path d="M42 62C42 42 56 26 80 26C104 26 118 42 118 62C118 52 108 36 80 36C52 36 42 52 42 62Z" fill="#09151a" />
-              <path d="M45 48C50 32 64 22 80 22C98 22 112 32 115 48C105 32 88 28 80 28C68 28 54 34 45 48Z" fill="#1b2e35" />
-              <path d="M48 68C48 88 62 104 80 104C98 104 112 88 112 68C112 55 106 48 80 48C54 48 48 55 48 68Z" fill="#f4b285" />
-              {/* Shades */}
-              <rect fill="#09151a" height="15" rx="3" width="24" x="52" y="60" />
-              <rect fill="#09151a" height="15" rx="3" width="24" x="84" y="60" />
-              <path d="M76 66H84" stroke="#09151a" strokeLinecap="round" strokeWidth="4" />
-              <path d="M54 63L68 63" stroke="#88ceff" strokeLinecap="round" strokeWidth="2.5" />
-              <path d="M86 63L100 63" stroke="#88ceff" strokeLinecap="round" strokeWidth="2.5" />
-              <path d="M73 88C76 90 82 90 87 88" stroke="#a75b33" strokeLinecap="round" strokeWidth="3" />
-              <path d="M30 156C30 126 52 116 80 116C108 116 130 126 130 156" fill="#00a8ed" />
-              <path d="M68 116L80 134L92 116" fill="#003954" />
-            </svg>
+            {userStats.avatarUrl ? (
+              <img
+                src={userStats.avatarUrl}
+                alt={userStats.name}
+                className="w-28 h-28 rounded-2xl object-cover ring-4 ring-primary shadow-2xl"
+              />
+            ) : (
+              <div className="w-28 h-28 rounded-2xl bg-gradient-to-tr from-[#1b2e35] to-[#243b46] border-2 border-primary/60 flex items-center justify-center shadow-2xl text-primary">
+                <span className="material-symbols-outlined text-6xl">person</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -49,31 +72,74 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ userStats }) => {
             <div className="flex flex-col">
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-extrabold text-on-surface">{userStats.name}</h1>
-                <span className="px-2.5 py-0.5 rounded-full bg-primary/20 text-primary text-xs uppercase font-extrabold">
+                {isGoogleUser && (
+                  <span className="px-2.5 py-0.5 rounded-full bg-primary/20 text-primary text-xs uppercase font-extrabold flex items-center gap-1 border border-primary/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    Google Verified
+                  </span>
+                )}
+                <span className="px-2.5 py-0.5 rounded-full bg-surface-container-high text-text-muted text-xs uppercase font-extrabold">
                   {userStats.batch}
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-text-muted text-xs sm:text-sm mt-0.5">
+              <div className="flex flex-wrap items-center gap-2 text-text-muted text-xs sm:text-sm mt-0.5">
                 <span className="font-mono text-secondary font-semibold">{userStats.username}</span>
+                {userStats.email && (
+                  <>
+                    <span>•</span>
+                    <span>{userStats.email}</span>
+                  </>
+                )}
                 <span>•</span>
-                <span>Physical Science & ICT Stream</span>
+                <span>{userStats.school}</span>
               </div>
             </div>
 
-            <button
-              onClick={() => alert('Profile verified with Sri Lankan G.C.E. A/L ICT Examination Index.')}
-              className="px-4 py-2 rounded-xl bg-surface-container-high text-on-surface hover:bg-card-border text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all self-start"
-            >
-              <span className="material-symbols-outlined text-base">edit</span>
-              <span>Edit Profile</span>
-            </button>
+            <div className="flex items-center gap-2 self-start">
+              {isGoogleUser ? (
+                <button
+                  onClick={handleSignOut}
+                  disabled={authLoading}
+                  className="px-3.5 py-2 rounded-xl bg-surface-container-high hover:bg-crimson-heart/20 text-text-muted hover:text-crimson-heart text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all border border-card-border"
+                >
+                  <span className="material-symbols-outlined text-base">logout</span>
+                  <span>Sign Out</span>
+                </button>
+              ) : (
+                <button
+                  onClick={handleGoogleAuth}
+                  disabled={authLoading}
+                  className="px-4 py-2 rounded-xl bg-surface-container-high hover:bg-surface-variant text-on-surface text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all border border-card-border"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                    />
+                  </svg>
+                  <span>Connect Google</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Statistics Section */}
+      {/* Real Statistics Section */}
       <div className="flex flex-col gap-4">
-        <h3 className="text-xl font-bold text-on-surface">Statistics</h3>
+        <h3 className="text-xl font-bold text-on-surface">Telemetry & Performance</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {/* Day Streak */}
           <div className="p-4 rounded-2xl bg-card-dark border border-card-border flex items-center gap-3.5 shadow-sm">
@@ -93,69 +159,63 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ userStats }) => {
             </div>
           </div>
 
-          {/* Current League */}
+          {/* Real MCQs Attempted */}
           <div className="p-4 rounded-2xl bg-card-dark border border-card-border flex items-center gap-3.5 shadow-sm">
-            <span className="text-3xl">💎</span>
+            <span className="text-3xl">🎯</span>
             <div className="flex flex-col">
-              <span className="text-xl font-extrabold text-secondary font-mono">Tier V</span>
-              <span className="text-xs text-text-muted">Diamond League</span>
+              <span className="text-xl font-extrabold text-secondary font-mono">{totalAttempted}</span>
+              <span className="text-xs text-text-muted">Drill Attempts</span>
             </div>
           </div>
 
-          {/* Top 3 Finishes */}
+          {/* Real Accuracy */}
           <div className="p-4 rounded-2xl bg-card-dark border border-card-border flex items-center gap-3.5 shadow-sm">
-            <span className="text-3xl">🏆</span>
+            <span className="text-3xl">📊</span>
             <div className="flex flex-col">
-              <span className="text-xl font-extrabold text-lightning-gold font-mono">6</span>
-              <span className="text-xs text-text-muted">Top 3 Finishes</span>
+              <span className="text-xl font-extrabold text-lightning-gold font-mono">{overallAccuracy}%</span>
+              <span className="text-xs text-text-muted">Real Accuracy</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Syllabus Unit Mastery Progress */}
+      {/* REAL Syllabus Unit Mastery Progress */}
       <div className="flex flex-col gap-4">
-        <h3 className="text-xl font-bold text-on-surface">Syllabus Mastery Breakdown</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-bold text-on-surface">Real Syllabus Mastery Breakdown</h3>
+          <span className="text-xs text-text-muted font-mono">
+            {totalAttempted} Verified Candidate Logs
+          </span>
+        </div>
+
         <div className="flex flex-col gap-3">
-          <div className="p-4 rounded-2xl bg-card-dark border border-card-border flex flex-col gap-2">
-            <div className="flex justify-between text-xs sm:text-sm font-bold">
-              <span>Unit 03: Digital Logic Gates & Boolean Algebra</span>
-              <span className="text-primary font-mono">92% Mastery</span>
-            </div>
-            <div className="w-full h-2.5 bg-surface-container-high rounded-full overflow-hidden">
-              <div className="h-full bg-primary rounded-full" style={{ width: '92%' }} />
-            </div>
-          </div>
+          {unitMasteries.map((m) => {
+            const colorClass =
+              m.masteryPercent >= 80
+                ? 'bg-primary text-primary'
+                : m.masteryPercent >= 50
+                ? 'bg-lightning-gold text-lightning-gold'
+                : m.masteryPercent > 0
+                ? 'bg-secondary text-secondary'
+                : 'bg-text-muted text-text-muted';
 
-          <div className="p-4 rounded-2xl bg-card-dark border border-card-border flex flex-col gap-2">
-            <div className="flex justify-between text-xs sm:text-sm font-bold">
-              <span>Unit 08: Algorithms & Python Programming</span>
-              <span className="text-lightning-gold font-mono">94% Mastery</span>
-            </div>
-            <div className="w-full h-2.5 bg-surface-container-high rounded-full overflow-hidden">
-              <div className="h-full bg-lightning-gold rounded-full" style={{ width: '94%' }} />
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-card-dark border border-card-border flex flex-col gap-2">
-            <div className="flex justify-between text-xs sm:text-sm font-bold">
-              <span>Unit 05: Data Communication & Networks</span>
-              <span className="text-secondary font-mono">88% Mastery</span>
-            </div>
-            <div className="w-full h-2.5 bg-surface-container-high rounded-full overflow-hidden">
-              <div className="h-full bg-secondary rounded-full" style={{ width: '88%' }} />
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-card-dark border border-card-border flex flex-col gap-2">
-            <div className="flex justify-between text-xs sm:text-sm font-bold">
-              <span>Unit 06: Database Management Systems</span>
-              <span className="text-pink-400 font-mono">85% Mastery</span>
-            </div>
-            <div className="w-full h-2.5 bg-surface-container-high rounded-full overflow-hidden">
-              <div className="h-full bg-pink-400 rounded-full" style={{ width: '85%' }} />
-            </div>
-          </div>
+            return (
+              <div key={m.unit} className="p-4 rounded-2xl bg-card-dark border border-card-border flex flex-col gap-2">
+                <div className="flex justify-between items-center text-xs sm:text-sm font-bold">
+                  <span className="truncate mr-2">{m.unitTitle}</span>
+                  <span className={`font-mono shrink-0 ${colorClass.split(' ')[1]}`}>
+                    {m.attemptCount > 0 ? `${m.masteryPercent}% (${m.correctCount}/${m.attemptCount})` : '0% (0 attempts)'}
+                  </span>
+                </div>
+                <div className="w-full h-2.5 bg-surface-container-high rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${colorClass.split(' ')[0]}`}
+                    style={{ width: `${Math.max(m.attemptCount > 0 ? 5 : 0, m.masteryPercent)}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

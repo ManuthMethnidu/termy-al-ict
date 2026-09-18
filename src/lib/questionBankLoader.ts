@@ -41,15 +41,36 @@ export interface MasterQuestionBankData {
   questions: any[];
 }
 
+export const SUBJECT_TO_UNIT: Record<string, number> = {
+  'Introduction to ICT & Data/Information': 1,
+  'Number Systems & Data Representation': 2,
+  'Digital Electronics & Logic Circuits': 3,
+  'Computer Systems & Architecture': 4,
+  'Operating Systems & File Management': 5,
+  'Programming Concepts (Python/PHP)': 6,
+  'Database Management Systems': 7,
+  'Web Development': 8,
+  'Data Communication & Networking': 9,
+  'Systems Analysis & Design': 10,
+  'ICT & Society, Security, E-commerce': 11,
+  'General ICT': 12,
+};
+
 let cachedCourse: DuolingoCourseData | null = null;
 let cachedSubjects: SubjectWiseData | null = null;
 let cachedQuizzes: QuizItem[] | null = null;
 let cachedMaster: MasterQuestionBankData | null = null;
+let cachedAdaptedMaster: McqQuestion[] | null = null;
 
 export function adaptRawQuestion(raw: any, index?: number): McqQuestion {
+  const resolvedUnit =
+    raw.unit_id ||
+    (raw.subject ? SUBJECT_TO_UNIT[raw.subject] : undefined) ||
+    1;
+
   return {
     id: raw.id || `q_${index || Math.floor(Math.random() * 100000)}`,
-    unit: raw.unit_id || 1,
+    unit: resolvedUnit,
     unitTitle: raw.subject || 'A/L ICT Module',
     question: raw.question,
     isQuestionLatex: raw.question?.includes('$') || raw.question?.includes('\\'),
@@ -97,4 +118,16 @@ export async function fetchMasterBank(): Promise<MasterQuestionBankData> {
   if (!res.ok) throw new Error('Failed to load ict_question_bank.json');
   cachedMaster = await res.json();
   return cachedMaster!;
+}
+
+/**
+ * Load all 2,636 real questions adapted for MCQ Drills and Practice Hub
+ */
+export async function getAllMasterQuestions(): Promise<McqQuestion[]> {
+  if (cachedAdaptedMaster && cachedAdaptedMaster.length > 0) {
+    return cachedAdaptedMaster;
+  }
+  const bank = await fetchMasterBank();
+  cachedAdaptedMaster = bank.questions.map((raw, idx) => adaptRawQuestion(raw, idx));
+  return cachedAdaptedMaster;
 }

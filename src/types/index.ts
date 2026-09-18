@@ -46,6 +46,10 @@ export interface SpacedRepetitionItem {
 }
 
 export interface UserStats {
+  id?: string;
+  email?: string;
+  avatarUrl?: string;
+  authProvider?: 'google' | 'guest';
   name: string;
   username: string;
   batch: string;
@@ -83,8 +87,10 @@ export interface DailyQuest {
 
 export interface LeaderboardEntry {
   rank: number;
+  id?: string;
   name: string;
   username: string;
+  avatarUrl?: string;
   school: string;
   level: string;
   streak: number;

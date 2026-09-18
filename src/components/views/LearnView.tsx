@@ -1,5 +1,6 @@
-import React from 'react';
-import { UserStats, NavTab } from '../../types';
+import React, { useState, useEffect } from 'react';
+import { UserStats, NavTab, LeaderboardEntry } from '../../types';
+import { getRealDailyQuests, fetchRealLeaderboard } from '../../lib/supabase';
 
 interface LearnViewProps {
   userStats: UserStats;
@@ -14,6 +15,20 @@ export const LearnView: React.FC<LearnViewProps> = ({
   onOpenGuidebook,
   onSelectTab,
 }) => {
+  const [topLeaders, setTopLeaders] = useState<LeaderboardEntry[]>([]);
+  const realQuests = getRealDailyQuests(userStats.streakDays);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchRealLeaderboard(userStats).then((entries) => {
+      if (isMounted) {
+        setTopLeaders(entries.slice(0, 3));
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [userStats]);
   return (
     <div className="flex flex-col lg:flex-row gap-8 w-full max-w-6xl mx-auto pb-24 md:pb-12">
       {/* Central Learning Roadmap Column */}
@@ -308,24 +323,27 @@ export const LearnView: React.FC<LearnViewProps> = ({
             </button>
           </div>
           <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-on-surface">Solve 15 Logic Gate MCQs</span>
-                <span className="text-text-muted font-mono">11/15</span>
-              </div>
-              <div className="w-full h-2.5 bg-surface-container-high rounded-full overflow-hidden border border-card-border">
-                <div className="h-full bg-primary rounded-full transition-all" style={{ width: '73%' }} />
-              </div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-on-surface">Score 100% in Python Drill</span>
-                <span className="text-lightning-gold font-bold">Completed</span>
-              </div>
-              <div className="w-full h-2.5 bg-surface-container-high rounded-full overflow-hidden border border-card-border">
-                <div className="h-full bg-lightning-gold rounded-full" style={{ width: '100%' }} />
-              </div>
-            </div>
+            {realQuests.slice(0, 2).map((q) => {
+              const pct = Math.min(100, Math.round((q.current / q.target) * 100));
+              return (
+                <div key={q.id} className="flex flex-col gap-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-on-surface truncate pr-2">{q.title}</span>
+                    <span className={`font-mono ${q.completed ? 'text-lightning-gold font-bold' : 'text-text-muted'}`}>
+                      {q.completed ? 'Completed' : `${q.current}/${q.target}`}
+                    </span>
+                  </div>
+                  <div className="w-full h-2.5 bg-surface-container-high rounded-full overflow-hidden border border-card-border">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        q.completed ? 'bg-lightning-gold' : 'bg-primary'
+                      }`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -336,30 +354,54 @@ export const LearnView: React.FC<LearnViewProps> = ({
               <span className="material-symbols-outlined text-secondary text-xl">trophy</span>
               <h4 className="font-bold text-base text-on-surface">Diamond League</h4>
             </div>
-            <span className="text-xs text-text-muted">2 Days Left</span>
+            <button
+              onClick={() => onSelectTab('leaderboards')}
+              className="text-xs text-secondary uppercase font-bold hover:underline"
+            >
+              Leaderboard
+            </button>
           </div>
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between p-2 rounded-lg bg-surface-container-high/60 border border-card-border">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-lightning-gold">1</span>
-                <span className="text-xs text-on-surface font-semibold">Kaveen S.</span>
+            {topLeaders.length === 0 ? (
+              <div className="p-3 rounded-lg bg-surface-container text-xs text-text-muted text-center">
+                Syncing live rankings...
               </div>
-              <span className="text-xs text-text-muted font-mono">1,840 XP</span>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-surface-container border-2 border-primary">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-primary">2</span>
-                <span className="text-xs text-on-surface font-bold">You (Manuth)</span>
-              </div>
-              <span className="text-xs text-primary font-bold font-mono">{userStats.xp} XP</span>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-surface-container-high/60 border border-card-border">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-text-muted">3</span>
-                <span className="text-xs text-on-surface font-semibold">Tharindu P.</span>
-              </div>
-              <span className="text-xs text-text-muted font-mono">1,610 XP</span>
-            </div>
+            ) : (
+              topLeaders.map((lead) => (
+                <div
+                  key={lead.id || lead.rank}
+                  className={`flex items-center justify-between p-2 rounded-lg ${
+                    lead.isCurrentUser
+                      ? 'bg-surface-container border-2 border-primary'
+                      : 'bg-surface-container-high/60 border border-card-border'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className={`text-xs font-bold ${
+                        lead.rank === 1
+                          ? 'text-lightning-gold'
+                          : lead.isCurrentUser
+                          ? 'text-primary'
+                          : 'text-text-muted'
+                      }`}
+                    >
+                      {lead.rank}
+                    </span>
+                    <span className="text-xs text-on-surface font-semibold truncate">
+                      {lead.name} {lead.isCurrentUser ? '(You)' : ''}
+                    </span>
+                  </div>
+                  <span
+                    className={`text-xs font-mono shrink-0 ${
+                      lead.isCurrentUser ? 'text-primary font-bold' : 'text-text-muted'
+                    }`}
+                  >
+                    {lead.xp.toLocaleString()} XP
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </aside>

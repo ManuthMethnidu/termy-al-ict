@@ -1,5 +1,7 @@
 import React from 'react';
-import { UserStats, DailyQuest } from '../../types';
+import { UserStats } from '../../types';
+import { getRealDailyQuests, getLocalAttempts } from '../../lib/supabase';
+import { loadSRData } from '../../lib/spacedRepetition';
 
 interface QuestsViewProps {
   userStats: UserStats;
@@ -7,84 +9,47 @@ interface QuestsViewProps {
 }
 
 export const QuestsView: React.FC<QuestsViewProps> = ({ userStats }) => {
-  const quests: DailyQuest[] = [
-    {
-      id: 'q1',
-      title: 'Solve 15 Logic Gate MCQs',
-      description: 'Boolean Algebra, Karnaugh maps & NAND equivalences',
-      unitTag: 'Unit 3',
-      current: 11,
-      target: 15,
-      xpReward: 25,
-      gemReward: 5,
-      completed: false,
-      icon: 'schema',
-    },
-    {
-      id: 'q2',
-      title: 'Score 100% in Python Loop Drill',
-      description: 'Zero errors on integer division and string concatenation',
-      unitTag: 'Unit 8',
-      current: 5,
-      target: 5,
-      xpReward: 40,
-      gemReward: 10,
-      completed: true,
-      icon: 'terminal',
-    },
-    {
-      id: 'q3',
-      title: 'Review 5 Spaced Repetition Items',
-      description: 'Clear tricky questions resurfaced by Termy engine',
-      unitTag: 'Active Recall',
-      current: 3,
-      target: 5,
-      xpReward: 20,
-      gemReward: 5,
-      completed: false,
-      icon: 'autorenew',
-    },
-    {
-      id: 'q4',
-      title: 'Maintain 14+ Day Study Streak',
-      description: 'Complete at least 1 drill before midnight',
-      unitTag: 'Consistency',
-      current: 14,
-      target: 14,
-      xpReward: 50,
-      gemReward: 15,
-      completed: true,
-      icon: 'local_fire_department',
-    },
-  ];
+  const quests = getRealDailyQuests(userStats.streakDays);
+  const attempts = getLocalAttempts();
+  const srData = loadSRData();
+
+  // Dynamic milestone metrics based on REAL candidate attempts
+  const logicAttempts = attempts.filter((a) => a.unit === 3 && a.isCorrect).length;
+  const networkAttempts = attempts.filter((a) => a.unit === 9 && a.isCorrect).length;
+  const pythonAttempts = attempts.filter((a) => a.unit === 6 && a.isCorrect).length;
+  const srMastered = Object.values(srData).filter((item) => item.consecutiveCorrect >= 2).length;
 
   const badges = [
     {
       name: 'De Morgan Master',
-      desc: 'Solved 50 Boolean algebra questions without missing an operator inversion.',
+      desc: 'Master Boolean algebra, Karnaugh maps & logic gate inversions.',
       icon: 'memory',
-      unlocked: true,
+      unlocked: logicAttempts >= 5,
+      progress: `${logicAttempts}/5 Correct`,
       tier: 'Gold',
     },
     {
       name: 'Subnet Samurai',
-      desc: 'Calculated 20 CIDR network and broadcast addresses in under 45 seconds.',
+      desc: 'Calculate CIDR network, host block sizes and broadcast subnets.',
       icon: 'hub',
-      unlocked: true,
+      unlocked: networkAttempts >= 5,
+      progress: `${networkAttempts}/5 Correct`,
       tier: 'Silver',
     },
     {
       name: 'Python Bug Squasher',
-      desc: 'Mastered 30 past paper trace tables without execution traps.',
+      desc: 'Conquer past paper trace tables, string loops & nested logic.',
       icon: 'code',
-      unlocked: true,
+      unlocked: pythonAttempts >= 5,
+      progress: `${pythonAttempts}/5 Correct`,
       tier: 'Gold',
     },
     {
       name: 'Spaced Memory Lock',
-      desc: 'Kept 25 consecutive tricky MCQs in long-term memory for over 7 days.',
+      desc: 'Retain tricky questions in long-term memory across intervals.',
       icon: 'psychology',
-      unlocked: false,
+      unlocked: srMastered >= 3,
+      progress: `${srMastered}/3 Mastered`,
       tier: 'Diamond',
     },
   ];
@@ -106,7 +71,7 @@ export const QuestsView: React.FC<QuestsViewProps> = ({ userStats }) => {
             </p>
           </div>
 
-          {/* Cyber Chip & Data Terminal graphic */}
+          {/* Cyber Chip Graphic */}
           <div className="relative hidden sm:flex items-center justify-center w-28 h-28 shrink-0">
             <svg
               className="w-24 h-24 text-secondary/80 animate-pulse"
@@ -142,7 +107,7 @@ export const QuestsView: React.FC<QuestsViewProps> = ({ userStats }) => {
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-lightning-gold text-xs font-bold">
           <span className="material-symbols-outlined text-sm">timer</span>
-          <span>6 Hours Left</span>
+          <span>Resets at Midnight</span>
         </div>
       </div>
 
@@ -193,15 +158,16 @@ export const QuestsView: React.FC<QuestsViewProps> = ({ userStats }) => {
                 </div>
               </div>
 
-              {/* Rewards button */}
+              {/* Rewards status */}
               <div className="flex items-center gap-3 sm:self-center shrink-0">
                 <div className="flex items-center gap-2 text-xs font-mono font-bold">
                   <span className="text-primary-fixed-dim">+{quest.xpReward} XP</span>
                   <span className="text-secondary">+{quest.gemReward} 💎</span>
                 </div>
                 {quest.completed ? (
-                  <span className="px-3 py-1.5 rounded-xl bg-lightning-gold/20 text-lightning-gold text-xs font-bold uppercase tracking-wider border border-lightning-gold/40">
-                    Claimed
+                  <span className="px-3 py-1.5 rounded-xl bg-lightning-gold/20 text-lightning-gold text-xs font-bold uppercase tracking-wider border border-lightning-gold/40 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">check</span>
+                    <span>Completed</span>
                   </span>
                 ) : (
                   <span className="px-3 py-1.5 rounded-xl bg-surface-container text-text-muted text-xs font-bold uppercase tracking-wider">
@@ -242,6 +208,7 @@ export const QuestsView: React.FC<QuestsViewProps> = ({ userStats }) => {
                   <span className="text-[10px] uppercase font-bold text-secondary">{badge.tier}</span>
                 </div>
                 <p className="text-xs text-text-muted mt-1">{badge.desc}</p>
+                <span className="text-[11px] font-mono mt-1 text-primary font-bold">{badge.progress}</span>
               </div>
             </div>
           ))}

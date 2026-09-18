@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavTab, UserStats, McqQuestion } from './types';
 import { Sidebar } from './components/common/Sidebar';
 import { Header } from './components/common/Header';
@@ -14,30 +14,32 @@ import { GuidebookModal } from './components/views/GuidebookModal';
 import { HelpFaqModal } from './components/views/HelpFaqModal';
 import { LiveMcqDrill } from './components/drill/LiveMcqDrill';
 import { SYLLABUS_QUESTIONS } from './data/syllabusQuestions';
+import { getAllMasterQuestions } from './lib/questionBankLoader';
 import { syncUserStatsToSupabase } from './lib/supabase';
+import { onAuthStateChange, fetchUserProfile } from './lib/auth';
 import { sounds } from './lib/sound';
 
 const INITIAL_STATS: UserStats = {
-  name: 'Manuth Methnidu',
-  username: '@EnterAltBreak',
+  name: 'Candidate',
+  username: '@al_candidate',
   batch: '2025 A/L Batch',
   stream: 'Physical Science & ICT Stream',
   school: 'Royal College • Colombo 07',
-  streakDays: 14,
-  gems: 480, // bits
+  streakDays: 1,
+  gems: 100,
   hearts: 5,
   maxHearts: 5,
-  xp: 1720,
-  level: 4,
+  xp: 50,
+  level: 1,
   league: 'Diamond League',
-  leagueRank: 2,
+  leagueRank: 1,
   isPro: false,
   soundEnabled: true,
   hapticsEnabled: true,
   dailyGoalMinutes: 20,
   targetExamYear: 2025,
-  completedLessons: ['1. Basic Gates', '2. Universal Gates', '3. 2019 MCQ Drill'],
-  reviewedQuestionIds: ['ict-2022-mcq-14'],
+  completedLessons: [],
+  reviewedQuestionIds: [],
 };
 
 export const App: React.FC = () => {
@@ -56,10 +58,71 @@ export const App: React.FC = () => {
     return INITIAL_STATS;
   });
 
+  const [masterQuestions, setMasterQuestions] = useState<McqQuestion[]>(SYLLABUS_QUESTIONS);
   const [isDrillOpen, setIsDrillOpen] = useState<boolean>(false);
   const [drillQuestions, setDrillQuestions] = useState<McqQuestion[]>(SYLLABUS_QUESTIONS);
   const [isGuidebookOpen, setIsGuidebookOpen] = useState<boolean>(false);
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
+
+  // Load master questions from real question bank on mount
+  useEffect(() => {
+    let isMounted = true;
+    getAllMasterQuestions()
+      .then((questions) => {
+        if (isMounted && questions && questions.length > 0) {
+          setMasterQuestions(questions);
+        }
+      })
+      .catch((err) => {
+        console.warn('Error pre-loading master questions:', err);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Subscribe to Supabase Auth State (Google OAuth login / logout)
+  useEffect(() => {
+    const { unsubscribe } = onAuthStateChange(async (_session, user) => {
+      if (user) {
+        const meta = user.user_metadata || {};
+        const profile = await fetchUserProfile(user.id);
+
+        if (profile) {
+          setUserStats((prev) => ({
+            ...prev,
+            ...profile,
+            id: user.id,
+            email: user.email,
+            authProvider: 'google',
+          }));
+        } else {
+          // Fresh Google sign-in
+          const googleName =
+            meta.full_name || meta.name || user.email?.split('@')[0] || 'Candidate';
+          const googleAvatar = meta.avatar_url;
+          const newStats: Partial<UserStats> = {
+            id: user.id,
+            email: user.email,
+            name: googleName,
+            username: `@${user.email?.split('@')[0] || 'candidate'}`,
+            avatarUrl: googleAvatar,
+            authProvider: 'google',
+          };
+
+          setUserStats((prev) => {
+            const next = { ...prev, ...newStats };
+            syncUserStatsToSupabase(next);
+            return next;
+          });
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   // Sync stats when updated
   const handleUpdateStats = (partial: Partial<UserStats>) => {
@@ -72,7 +135,11 @@ export const App: React.FC = () => {
 
   const handleStartLesson = () => {
     sounds.playClick();
-    setDrillQuestions(SYLLABUS_QUESTIONS);
+    // Sample 5 real questions from Unit 3 (Digital Electronics) or master bank
+    const unit3Pool = masterQuestions.filter((q) => q.unit === 3);
+    const pool = unit3Pool.length > 0 ? unit3Pool : masterQuestions;
+    const shuffled = [...pool].sort(() => 0.5 - Math.random()).slice(0, 5);
+    setDrillQuestions(shuffled);
     setIsDrillOpen(true);
   };
 
