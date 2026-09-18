@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserStats } from '../../types';
+import { NavTab, UserStats } from '../../types';
 import { sounds } from '../../lib/sound';
 import {
   getSupabaseConfig,
@@ -13,6 +13,7 @@ interface SettingsViewProps {
   onUpdateStats: (newStats: Partial<UserStats>) => void;
   onOpenHelp: () => void;
   onOpenAdmin?: () => void;
+  onNavigate?: (tab: NavTab) => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -20,6 +21,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onUpdateStats,
   onOpenHelp,
   onOpenAdmin,
+  onNavigate,
 }) => {
   // Supabase states
   const [supabaseUrl, setSupabaseUrl] = useState<string>('');
@@ -472,6 +474,35 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </section>
 
+      {/* Legal & Platform Policies */}
+      <section className="p-5 rounded-2xl bg-card-dark border border-card-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-surface-container border border-card-border flex items-center justify-center text-primary">
+            <span className="material-symbols-outlined text-2xl">policy</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-on-surface">Legal & Transparency</span>
+            <span className="text-xs text-text-muted">Student-first privacy policy & academic revision terms</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onNavigate && onNavigate('privacy')}
+            className="px-3 py-2 bg-surface-container hover:bg-surface-variant text-text-muted hover:text-on-surface rounded-xl text-xs font-bold border border-card-border transition-all flex items-center gap-1.5"
+          >
+            <span className="material-symbols-outlined text-sm">verified_user</span>
+            <span>Privacy Policy</span>
+          </button>
+          <button
+            onClick={() => onNavigate && onNavigate('terms')}
+            className="px-3 py-2 bg-surface-container hover:bg-surface-variant text-text-muted hover:text-on-surface rounded-xl text-xs font-bold border border-card-border transition-all flex items-center gap-1.5"
+          >
+            <span className="material-symbols-outlined text-sm">gavel</span>
+            <span>Terms of Service</span>
+          </button>
+        </div>
+      </section>
+
       {/* Root Admin Console Gate */}
       <section className="p-5 rounded-2xl bg-card-dark border border-primary/40 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
@@ -493,8 +524,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </section>
 
       {/* App Information */}
-      <div className="text-center text-xs text-text-muted font-mono">
-        Termy A/L ICT Revision Platform • Version 1.0.0 • G.C.E. Advanced Level Syllabus
+      <div className="text-center text-xs text-text-muted font-mono flex flex-col items-center gap-1.5">
+        <div>Termy A/L ICT Revision Platform • Version 1.0.0 • G.C.E. Advanced Level Syllabus</div>
+        <div className="flex items-center gap-2 text-[11px]">
+          <button
+            onClick={() => onNavigate && onNavigate('privacy')}
+            className="hover:text-primary transition-colors underline underline-offset-2"
+          >
+            Privacy Policy
+          </button>
+          <span>•</span>
+          <button
+            onClick={() => onNavigate && onNavigate('terms')}
+            className="hover:text-primary transition-colors underline underline-offset-2"
+          >
+            Terms of Service
+          </button>
+        </div>
       </div>
     </div>
   );

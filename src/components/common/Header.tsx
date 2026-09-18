@@ -174,12 +174,34 @@ export const Header: React.FC<HeaderProps> = ({
                   className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-on-surface hover:bg-surface-container rounded-xl text-left transition-colors"
                 >
                   <span className="material-symbols-outlined text-base">settings</span>
-                  <span>Settings & Sync</span>
+                  <span>Settings & Preferences</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    onSelectTab('privacy');
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-on-surface hover:bg-surface-container rounded-xl text-left transition-colors"
+                >
+                  <span className="material-symbols-outlined text-base">verified_user</span>
+                  <span>Privacy Policy</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    onSelectTab('terms');
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-on-surface hover:bg-surface-container rounded-xl text-left transition-colors"
+                >
+                  <span className="material-symbols-outlined text-base">gavel</span>
+                  <span>Terms of Service</span>
                 </button>
 
                 <button
                   onClick={handleSignOut}
-                  className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-crimson-heart hover:bg-crimson-heart/10 rounded-xl text-left transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-crimson-heart hover:bg-crimson-heart/10 rounded-xl text-left transition-colors border-t border-card-border/40 mt-1 pt-2"
                 >
                   <span className="material-symbols-outlined text-base">logout</span>
                   <span>Sign Out</span>
@@ -191,10 +213,10 @@ export const Header: React.FC<HeaderProps> = ({
       </header>
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 h-16 bg-[#131f24]/95 backdrop-blur-md border-t-2 border-card-border z-40 flex md:hidden items-center justify-around px-2 select-none">
+      <nav className="fixed bottom-0 left-0 right-0 h-16 bg-[#131f24]/95 backdrop-blur-md border-t-2 border-card-border z-40 flex md:hidden items-center justify-around px-1 select-none">
         <button
           onClick={() => onSelectTab('learn')}
-          className={`flex flex-col items-center gap-0.5 p-2 ${
+          className={`flex flex-col items-center gap-0.5 p-1.5 ${
             activeTab === 'learn' ? 'text-primary' : 'text-text-muted'
           }`}
         >
@@ -204,7 +226,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         <button
           onClick={() => onSelectTab('questions')}
-          className={`flex flex-col items-center gap-0.5 p-2 ${
+          className={`flex flex-col items-center gap-0.5 p-1.5 ${
             activeTab === 'questions' ? 'text-primary' : 'text-text-muted'
           }`}
         >
@@ -214,7 +236,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         <button
           onClick={() => onSelectTab('practice')}
-          className={`flex flex-col items-center gap-0.5 p-2 ${
+          className={`flex flex-col items-center gap-0.5 p-1.5 ${
             activeTab === 'practice' ? 'text-primary' : 'text-text-muted'
           }`}
         >
@@ -224,7 +246,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         <button
           onClick={() => onSelectTab('leaderboards')}
-          className={`flex flex-col items-center gap-0.5 p-2 ${
+          className={`flex flex-col items-center gap-0.5 p-1.5 ${
             activeTab === 'leaderboards' ? 'text-primary' : 'text-text-muted'
           }`}
         >
@@ -233,23 +255,28 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         <button
-          onClick={() => onSelectTab('quests')}
-          className={`flex flex-col items-center gap-0.5 p-2 ${
-            activeTab === 'quests' ? 'text-primary' : 'text-text-muted'
-          }`}
-        >
-          <span className="material-symbols-outlined text-2xl">assignment</span>
-          <span className="text-[10px] font-bold uppercase">Quests</span>
-        </button>
-
-        <button
           onClick={() => onSelectTab('profile')}
-          className={`flex flex-col items-center gap-0.5 p-2 ${
+          className={`flex flex-col items-center gap-0.5 p-1.5 ${
             activeTab === 'profile' ? 'text-primary' : 'text-text-muted'
           }`}
         >
           <span className="material-symbols-outlined text-2xl">badge</span>
           <span className="text-[10px] font-bold uppercase">Profile</span>
+        </button>
+
+        <button
+          onClick={() => onSelectTab('more')}
+          className={`flex flex-col items-center gap-0.5 p-1.5 ${
+            activeTab === 'more' ||
+            activeTab === 'settings' ||
+            activeTab === 'privacy' ||
+            activeTab === 'terms'
+              ? 'text-primary'
+              : 'text-text-muted'
+          }`}
+        >
+          <span className="material-symbols-outlined text-2xl">more_horiz</span>
+          <span className="text-[10px] font-bold uppercase">More</span>
         </button>
       </nav>
     </>

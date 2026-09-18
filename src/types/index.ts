@@ -7,6 +7,9 @@ export type NavTab =
   | 'shop'
   | 'profile'
   | 'more'
+  | 'settings'
+  | 'privacy'
+  | 'terms'
   | 'admin';
 
 export interface McqOption {

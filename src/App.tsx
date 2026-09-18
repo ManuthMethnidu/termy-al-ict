@@ -11,6 +11,8 @@ import { ShopView } from './components/views/ShopView';
 import { ProfileView } from './components/views/ProfileView';
 import { SettingsView } from './components/views/SettingsView';
 import { AdminPanelView } from './components/views/AdminPanelView';
+import { PrivacyPolicyView } from './components/views/PrivacyPolicyView';
+import { TermsOfServiceView } from './components/views/TermsOfServiceView';
 import { GuidebookModal } from './components/views/GuidebookModal';
 import { HelpFaqModal } from './components/views/HelpFaqModal';
 import { LiveMcqDrill } from './components/drill/LiveMcqDrill';
@@ -218,12 +220,34 @@ export const App: React.FC = () => {
             <ProfileView userStats={userStats} />
           )}
 
-          {activeTab === 'more' && (
+          {(activeTab === 'more' || activeTab === 'settings') && (
             <SettingsView
               userStats={userStats}
               onUpdateStats={handleUpdateStats}
               onOpenHelp={() => setIsHelpOpen(true)}
               onOpenAdmin={() => setActiveTab('admin')}
+              onNavigate={(tab) => {
+                sounds.playClick();
+                setActiveTab(tab);
+              }}
+            />
+          )}
+
+          {activeTab === 'privacy' && (
+            <PrivacyPolicyView
+              onNavigate={(tab) => {
+                sounds.playClick();
+                setActiveTab(tab);
+              }}
+            />
+          )}
+
+          {activeTab === 'terms' && (
+            <TermsOfServiceView
+              onNavigate={(tab) => {
+                sounds.playClick();
+                setActiveTab(tab);
+              }}
             />
           )}
 
