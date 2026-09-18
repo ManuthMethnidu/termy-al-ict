@@ -137,6 +137,20 @@ export function onAuthStateChange(
 
   const { data: authListener } = client.auth.onAuthStateChange(
     (_event, session) => {
+      // Clean up OAuth hash tokens from the address bar once captured
+      if (typeof window !== 'undefined' && window.location.hash) {
+        if (
+          window.location.hash.includes('access_token=') ||
+          window.location.hash.includes('refresh_token=') ||
+          window.location.hash.includes('error=')
+        ) {
+          window.history.replaceState(
+            null,
+            '',
+            window.location.pathname + window.location.search
+          );
+        }
+      }
       callback(session, session?.user ?? null);
     }
   );

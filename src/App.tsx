@@ -158,8 +158,23 @@ export const App: React.FC = () => {
   const [isGuidebookOpen, setIsGuidebookOpen] = useState<boolean>(false);
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
 
-  // Sync tab with browser URL and back/forward buttons
+  // Sync tab with browser URL and back/forward buttons, and clean OAuth hash fragments
   useEffect(() => {
+    // If arriving from Google OAuth callback with tokens in hash, cleanly strip the hash
+    if (typeof window !== 'undefined' && window.location.hash) {
+      if (
+        window.location.hash.includes('access_token=') ||
+        window.location.hash.includes('refresh_token=') ||
+        window.location.hash.includes('error=')
+      ) {
+        window.history.replaceState(
+          null,
+          '',
+          window.location.pathname + window.location.search
+        );
+      }
+    }
+
     const onPopState = () => {
       setActiveTab(getTabFromLocation());
     };

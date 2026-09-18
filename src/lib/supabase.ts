@@ -48,7 +48,14 @@ export function getSupabaseClient(): SupabaseClient | null {
   const cacheKey = `${config.url}_${config.key}`;
   if (!clientInstance || currentClientKey !== cacheKey) {
     try {
-      clientInstance = createClient(config.url, config.key);
+      clientInstance = createClient(config.url, config.key, {
+        auth: {
+          flowType: 'pkce',
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: true,
+        },
+      });
       currentClientKey = cacheKey;
     } catch (e) {
       console.error('Failed to initialize Supabase client', e);
