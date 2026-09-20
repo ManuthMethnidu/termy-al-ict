@@ -72,6 +72,9 @@ export interface UserStats {
   leagueGroupNumber?: number; // division of up to 30 active learners
   lastActiveWeek?: string; // e.g. "2026-W38"
   tournamentStage?: 'none' | 'quarter_finals' | 'semi_finals' | 'finals' | 'champion';
+  questPoints?: number;
+  boostActiveUntil?: number; // timestamp in ms for 2x XP boost
+  storedBoosts?: number; // count of saved 15m / 30m boosts in inventory
   isPro: boolean;
   soundEnabled: boolean;
   hapticsEnabled: boolean;
@@ -86,12 +89,67 @@ export interface DailyQuest {
   title: string;
   description: string;
   unitTag?: string;
+  tier: 'bronze' | 'silver' | 'gold';
+  chestType: 'common' | 'rare' | 'mega';
   current: number;
   target: number;
   xpReward: number;
   gemReward: number;
+  questPointsReward: number;
+  hasBoostReward?: boolean;
   completed: boolean;
+  claimed: boolean;
   icon: string;
+}
+
+export interface FriendsQuestData {
+  id: string;
+  partnerName: string;
+  partnerUsername: string;
+  partnerSchool: string;
+  partnerAvatarUrl?: string;
+  objectiveTitle: string;
+  objectiveDescription: string;
+  metricType: 'xp' | 'lessons';
+  currentTeamTotal: number;
+  targetTotal: number;
+  userContribution: number;
+  partnerContribution: number;
+  completed: boolean;
+  claimed: boolean;
+  gemReward: number;
+  questPointsReward: number;
+  boostMinutes: number;
+  deadlineText: string;
+  lastNudgedAt?: number;
+}
+
+export interface WeekendQuestData {
+  id: string;
+  title: string;
+  description: string;
+  statueName: string;
+  currentMilestone: number;
+  totalMilestones: number;
+  metricLabel: string;
+  completed: boolean;
+  claimed: boolean;
+  gemReward: number;
+  boostMinutes: number;
+  questPointsReward: number;
+  isActive: boolean;
+}
+
+export interface MonthlyChallengeData {
+  monthName: string;
+  badgeTitle: string;
+  badgeMascot: string;
+  badgeIcon: string;
+  currentPoints: number;
+  targetPoints: number;
+  completed: boolean;
+  claimed: boolean;
+  description: string;
 }
 
 export interface LeaderboardEntry {

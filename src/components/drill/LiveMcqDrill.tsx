@@ -6,6 +6,7 @@ import { TermyBear, TermyMood } from '../mascot/TermyBear';
 import { sounds } from '../../lib/sound';
 import { recordAnswer } from '../../lib/spacedRepetition';
 import { logMcqAttempt } from '../../lib/supabase';
+import { getRemainingBoostTime } from '../../lib/questsSystem';
 import confetti from 'canvas-confetti';
 
 interface LiveMcqDrillProps {
@@ -90,21 +91,31 @@ export const LiveMcqDrill: React.FC<LiveMcqDrillProps> = ({
       sounds.playCorrect();
       const newCombo = comboCount + 1;
       setComboCount(newCombo);
-      const earned = 15 + Math.min(newCombo * 2, 10);
+      const isBoosted = !!(userStats.boostActiveUntil && userStats.boostActiveUntil > Date.now());
+      const baseEarned = 15 + Math.min(newCombo * 2, 10);
+      const earned = isBoosted ? baseEarned * 2 : baseEarned;
       setSessionXpEarned((prev) => prev + earned);
       onUpdateStats({
         xp: userStats.xp + earned,
         weeklyXp: (userStats.weeklyXp || 0) + earned,
-        gems: userStats.gems + 2,
+        gems: userStats.gems + (isBoosted ? 4 : 2),
       });
 
       if (newCombo % 3 === 0) {
         sounds.playCombo();
         setTermyMood('celebrating');
-        setTermyComment(`Brilliant! ${newCombo} in a row! Spaced interval moved to ${nextReviewIn}.`);
+        setTermyComment(
+          isBoosted
+            ? `⚡ 2x Turbo Active! ${newCombo} combo! Earned +${earned} XP! Next review ${nextReviewIn}.`
+            : `Brilliant! ${newCombo} in a row! Spaced interval moved to ${nextReviewIn}.`
+        );
       } else {
         setTermyMood('celebrating');
-        setTermyComment(`Correct! Verified against official marking scheme. Next review ${nextReviewIn}.`);
+        setTermyComment(
+          isBoosted
+            ? `⚡ 2x XP Turbo! +${earned} XP! Next review ${nextReviewIn}.`
+            : `Correct! Verified against official marking scheme. Next review ${nextReviewIn}.`
+        );
       }
     } else {
       sounds.playIncorrect();
@@ -212,6 +223,19 @@ export const LiveMcqDrill: React.FC<LiveMcqDrillProps> = ({
             </div>
           </header>
 
+          {/* Active 2x XP Turbo Banner */}
+          {userStats.boostActiveUntil && userStats.boostActiveUntil > Date.now() && (
+            <div className="flex items-center justify-between px-4 py-2 mb-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/10 border border-amber-400/50 shadow-sm animate-pulse">
+              <div className="flex items-center gap-2 text-amber-300 text-xs font-black uppercase tracking-wider">
+                <span className="material-symbols-outlined text-base">bolt</span>
+                <span>2x XP Turbo Multiplier Active</span>
+              </div>
+              <span className="text-xs font-mono font-bold text-amber-300">
+                {getRemainingBoostTime(userStats.boostActiveUntil).formatted}
+              </span>
+            </div>
+          )}
+
           {/* Combo / Streak Strip */}
           <div className="flex items-center justify-between px-3.5 py-2 mb-5 rounded-xl bg-surface-container border border-card-border/40 shadow-sm">
             <div className="flex items-center gap-2">
@@ -230,8 +254,21 @@ export const LiveMcqDrill: React.FC<LiveMcqDrillProps> = ({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs px-2 py-0.5 rounded-lg bg-surface-variant text-primary-fixed-dim font-extrabold font-mono">
-                +{15 + Math.min(comboCount * 2, 10)} XP
+              <span
+                className={`text-xs px-2.5 py-0.5 rounded-lg font-extrabold font-mono flex items-center gap-1 ${
+                  userStats.boostActiveUntil && userStats.boostActiveUntil > Date.now()
+                    ? 'bg-amber-400 text-black shadow-sm'
+                    : 'bg-surface-variant text-primary-fixed-dim'
+                }`}
+              >
+                {userStats.boostActiveUntil && userStats.boostActiveUntil > Date.now() && (
+                  <span className="material-symbols-outlined text-xs">bolt</span>
+                )}
+                +
+                {userStats.boostActiveUntil && userStats.boostActiveUntil > Date.now()
+                  ? (15 + Math.min(comboCount * 2, 10)) * 2
+                  : 15 + Math.min(comboCount * 2, 10)}{' '}
+                XP
               </span>
               {sessionXpEarned > 0 && (
                 <span className="text-xs text-text-muted hidden sm:inline">

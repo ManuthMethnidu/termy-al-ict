@@ -48,6 +48,8 @@ const INITIAL_STATS: UserStats = {
   leagueGroupNumber: 1,
   lastActiveWeek: getCurrentWeekId(),
   tournamentStage: 'none',
+  questPoints: 0,
+  storedBoosts: 0,
   isPro: false,
   soundEnabled: true,
   hapticsEnabled: true,
@@ -390,7 +392,11 @@ export const App: React.FC = () => {
           )}
 
           {activeTab === 'quests' && (
-            <QuestsView userStats={userStats} />
+            <QuestsView
+              userStats={userStats}
+              onUpdateStats={handleUpdateStats}
+              onStartDrill={handleStartLesson}
+            />
           )}
 
           {activeTab === 'shop' && (

@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { LeaderboardEntry, DailyQuest, UserStats } from '../types';
 import { generateLeagueCohort } from './leagueSystem';
+import { getThreeTierDailyQuests } from './questsSystem';
 
 export interface LocalAttempt {
   id: string;
@@ -335,70 +336,15 @@ export function getRealUnitMastery(): UnitMasteryStat[] {
 }
 
 /**
- * Compute REAL Daily Quests Progress from candidate's actual attempts today
+ * Compute REAL 3-Tier Daily Quests Progress (Bronze, Silver, Gold Chests)
  */
-export function getRealDailyQuests(streakDays: number): DailyQuest[] {
-  const attempts = getLocalAttempts();
-  const today = new Date().toDateString();
+export function getRealDailyQuests(streakDaysOrStats: number | UserStats): DailyQuest[] {
+  const stats: UserStats =
+    typeof streakDaysOrStats === 'number'
+      ? ({ streakDays: streakDaysOrStats, xp: 50 } as any)
+      : streakDaysOrStats;
 
-  const todayAttempts = attempts.filter(
-    (att) => new Date(att.createdAt).toDateString() === today
-  );
-
-  const todayCount = todayAttempts.length;
-  const todayCorrect = todayAttempts.filter((a) => a.isCorrect).length;
-  const todayAccuracy = todayCount > 0 ? Math.round((todayCorrect / todayCount) * 100) : 0;
-
-  return [
-    {
-      id: 'quest_drill_15',
-      title: 'Solve 15 A/L ICT MCQs',
-      description: 'Complete 15 question drills across any syllabus unit today',
-      unitTag: 'Daily Target',
-      current: Math.min(15, todayCount),
-      target: 15,
-      xpReward: 30,
-      gemReward: 10,
-      completed: todayCount >= 15,
-      icon: 'terminal',
-    },
-    {
-      id: 'quest_accuracy_80',
-      title: 'Maintain 80%+ Accuracy Today',
-      description: 'Demonstrate high precision on timed exam drills',
-      unitTag: 'Accuracy',
-      current: todayCount >= 5 ? todayAccuracy : 0,
-      target: 80,
-      xpReward: 40,
-      gemReward: 15,
-      completed: todayCount >= 5 && todayAccuracy >= 80,
-      icon: 'verified',
-    },
-    {
-      id: 'quest_sr_review',
-      title: 'Spaced Repetition Active Recall',
-      description: 'Clear tricky questions resurfaced by the Termy engine',
-      unitTag: 'Active Recall',
-      current: Math.min(5, todayCount),
-      target: 5,
-      xpReward: 25,
-      gemReward: 10,
-      completed: todayCount >= 5,
-      icon: 'autorenew',
-    },
-    {
-      id: 'quest_streak_maintain',
-      title: 'Maintain Study Streak',
-      description: `Submit at least 1 verified drill session before midnight to preserve your ${streakDays}-day streak`,
-      unitTag: 'Consistency',
-      current: todayCount >= 1 ? streakDays : 0,
-      target: Math.max(1, streakDays),
-      xpReward: 50,
-      gemReward: 20,
-      completed: todayCount >= 1,
-      icon: 'local_fire_department',
-    },
-  ];
+  return getThreeTierDailyQuests(stats);
 }
 
 /**
