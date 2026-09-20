@@ -14,6 +14,8 @@ import {
   getRemainingBoostTime,
 } from '../../lib/questsSystem';
 import { sounds } from '../../lib/sound';
+import { QuestPartnerChooserModal } from '../social/QuestPartnerChooserModal';
+import { FriendUser } from '../../types';
 
 interface QuestsViewProps {
   userStats: UserStats;
@@ -37,6 +39,8 @@ export const QuestsView: React.FC<QuestsViewProps> = ({
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
   const [isNudging, setIsNudging] = useState(false);
   const [isGifting, setIsGifting] = useState(false);
+  const [isChooserOpen, setIsChooserOpen] = useState(false);
+  const [questsState, setQuestsState] = useState(loadQuestsState());
 
   // Refresh countdown timer every 30 seconds and boost status every second
   useEffect(() => {
@@ -54,7 +58,11 @@ export const QuestsView: React.FC<QuestsViewProps> = ({
     };
   }, [userStats.boostActiveUntil]);
 
-  const questsState = loadQuestsState();
+  const handlePartnerSelected = (partner: FriendUser) => {
+    setQuestsState(loadQuestsState());
+    showToast(`🤝 Paired with ${partner.name} for this week's Friends Quest!`);
+  };
+
   const dailyQuests = getThreeTierDailyQuests(userStats);
   const friendsQuest = questsState.friendsQuest;
   const weekendQuest = questsState.weekendQuest;
@@ -410,74 +418,107 @@ export const QuestsView: React.FC<QuestsViewProps> = ({
 
       {/* TAB 2: FRIENDS QUEST (Weekly Cooperative Team Challenge) */}
       {activeTab === 'friends' && (
-        <section className="flex flex-col gap-6 animate-fadeIn">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
-                <span className="material-symbols-outlined text-xl">handshake</span>
+        userStats.friendsQuestsEnabled === false ? (
+          <div className="p-8 rounded-3xl bg-card-dark border-2 border-card-border text-center flex flex-col items-center gap-4 max-w-md mx-auto my-6 shadow-xl animate-fadeIn">
+            <div className="w-16 h-16 rounded-3xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-3xl">
+              <span className="material-symbols-outlined text-3xl">person_off</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <h3 className="text-xl font-black text-on-surface">Friends Quests Paused</h3>
+              <p className="text-xs text-text-muted leading-relaxed">
+                You currently have Friends Quests turned off in your Preferences. You can re-enable them anytime to team up with mutual study partners.
+              </p>
+            </div>
+            {onUpdateStats && (
+              <button
+                onClick={() => onUpdateStats({ friendsQuestsEnabled: true })}
+                className="px-6 py-2.5 rounded-xl bg-primary text-on-primary-fixed text-xs font-black uppercase tracking-wider shadow-md hover:brightness-110 active:scale-95 transition-all"
+              >
+                Enable Friends Quests
+              </button>
+            )}
+          </div>
+        ) : (
+          <section className="flex flex-col gap-6 animate-fadeIn">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                  <span className="material-symbols-outlined text-xl">handshake</span>
+                </div>
+                <div>
+                  <h2 className="text-lg sm:text-xl font-black text-on-surface">
+                    Weekly Friends Quest
+                  </h2>
+                  <p className="text-xs text-text-muted">
+                    Team up with an active study partner to tackle big past paper goals together.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-lg sm:text-xl font-black text-on-surface">
-                  Weekly Friends Quest
-                </h2>
-                <p className="text-xs text-text-muted">
-                  Team up with an active study partner to tackle big past paper goals together.
-                </p>
-              </div>
+
+              <span className="px-3 py-1 rounded-xl bg-surface-container text-secondary text-xs font-extrabold border border-card-border">
+                {friendsQuest.deadlineText}
+              </span>
             </div>
 
-            <span className="px-3 py-1 rounded-xl bg-surface-container text-secondary text-xs font-extrabold border border-card-border">
-              {friendsQuest.deadlineText}
-            </span>
-          </div>
-
-          {/* Main Cooperative Challenge Card */}
-          <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-[#1e1b4b] via-[#131f24] to-[#0d1619] border-2 border-purple-500/40 shadow-xl flex flex-col gap-6">
-            {/* Study Partner Spotlight */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-surface-container/70 border border-card-border">
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-lg shadow-md">
-                  {friendsQuest.partnerName.charAt(0)}
-                </div>
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-base text-on-surface">
-                      {friendsQuest.partnerName}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-black uppercase">
-                      Study Partner
+            {/* Main Cooperative Challenge Card */}
+            <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-[#1e1b4b] via-[#131f24] to-[#0d1619] border-2 border-purple-500/40 shadow-xl flex flex-col gap-6">
+              {/* Study Partner Spotlight */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-surface-container/70 border border-card-border">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-lg shadow-md">
+                    {friendsQuest.partnerName.charAt(0)}
+                  </div>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-base text-on-surface">
+                        {friendsQuest.partnerName}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-black uppercase">
+                        Study Partner
+                      </span>
+                    </div>
+                    <span className="text-xs text-text-muted">
+                      {friendsQuest.partnerUsername} • {friendsQuest.partnerSchool}
                     </span>
                   </div>
-                  <span className="text-xs text-text-muted">
-                    {friendsQuest.partnerUsername} • {friendsQuest.partnerSchool}
-                  </span>
+                </div>
+
+                {/* Action Buttons: Choose Partner, Nudge & Gift Boost */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => {
+                      sounds.playClick();
+                      setIsChooserOpen(true);
+                    }}
+                    className="px-3 py-2 rounded-xl bg-surface-container-high hover:bg-surface-variant text-secondary text-xs font-bold flex items-center gap-1.5 transition-all border border-card-border active:scale-95"
+                    title="Choose partner from mutual friends (Sunday 48-hour window)"
+                  >
+                    <span className="material-symbols-outlined text-sm">group</span>
+                    <span>Change Partner</span>
+                  </button>
+
+                  <button
+                    onClick={handleSendNudge}
+                    disabled={isNudging}
+                    className="px-3.5 py-2 rounded-xl bg-surface-container-high hover:bg-surface-variant text-on-surface text-xs font-bold flex items-center gap-1.5 transition-all border border-card-border active:scale-95"
+                    title="Send free encouragement prompt"
+                  >
+                    <span className="material-symbols-outlined text-sm text-lightning-gold">waving_hand</span>
+                    <span>{isNudging ? 'Sending...' : 'Send Free Nudge'}</span>
+                  </button>
+
+                  <button
+                    onClick={handleSendBoost}
+                    disabled={isGifting}
+                    className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+                    title="Send a 15-minute 2x XP Boost (costs 20 Gems)"
+                  >
+                    <span className="material-symbols-outlined text-sm">bolt</span>
+                    <span>Gift 15m Boost (-20 💎)</span>
+                  </button>
                 </div>
               </div>
-
-              {/* Action Buttons: Nudge & Gift Boost */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleSendNudge}
-                  disabled={isNudging}
-                  className="px-3.5 py-2 rounded-xl bg-surface-container-high hover:bg-surface-variant text-on-surface text-xs font-bold flex items-center gap-1.5 transition-all border border-card-border active:scale-95"
-                  title="Send free encouragement prompt"
-                >
-                  <span className="material-symbols-outlined text-sm text-lightning-gold">waving_hand</span>
-                  <span>{isNudging ? 'Sending...' : 'Send Free Nudge'}</span>
-                </button>
-
-                <button
-                  onClick={handleSendBoost}
-                  disabled={isGifting}
-                  className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black flex items-center gap-1.5 transition-all shadow-md active:scale-95"
-                  title="Send a 15-minute 2x XP Boost (costs 20 Gems)"
-                >
-                  <span className="material-symbols-outlined text-sm">bolt</span>
-                  <span>Gift 15m Boost (-20 💎)</span>
-                </button>
-              </div>
-            </div>
 
             {/* Objective & Shared Bar */}
             <div className="flex flex-col gap-3">
@@ -561,7 +602,8 @@ export const QuestsView: React.FC<QuestsViewProps> = ({
             </div>
           </div>
         </section>
-      )}
+      )
+    )}
 
       {/* TAB 3: WEEKEND QUEST (5-Milestone Statue Construction) */}
       {activeTab === 'weekend' && (
@@ -867,6 +909,15 @@ export const QuestsView: React.FC<QuestsViewProps> = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Quest Partner Chooser Modal */}
+      {isChooserOpen && (
+        <QuestPartnerChooserModal
+          currentUser={userStats}
+          onClose={() => setIsChooserOpen(false)}
+          onPartnerSelected={handlePartnerSelected}
+        />
       )}
     </div>
   );

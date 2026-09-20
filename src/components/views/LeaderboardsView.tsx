@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserStats, LeaderboardEntry } from '../../types';
+import { UserStats, LeaderboardEntry, FriendUser } from '../../types';
 import { fetchRealLeaderboard } from '../../lib/supabase';
 import {
   LEAGUES,
@@ -9,15 +9,19 @@ import {
   DIAMOND_TOURNAMENT_ROUNDS,
 } from '../../lib/leagueSystem';
 import { sounds } from '../../lib/sound';
+import { UserProfileModal } from '../social/UserProfileModal';
+import { isUserFollowed } from '../../lib/friendsSystem';
 
 interface LeaderboardsProps {
   userStats: UserStats;
   onStartPractice?: () => void;
+  onUpdateStats?: (partial: Partial<UserStats>) => void;
 }
 
 export const LeaderboardsView: React.FC<LeaderboardsProps> = ({
   userStats,
   onStartPractice,
+  onUpdateStats,
 }) => {
   const currentLeagueId = userStats.leagueId || 1;
   const [selectedLeagueId, setSelectedLeagueId] = useState<number>(currentLeagueId);
@@ -26,6 +30,7 @@ export const LeaderboardsView: React.FC<LeaderboardsProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState<boolean>(false);
   const [resetCountdown, setResetCountdown] = useState(getTimeUntilWeeklyReset());
+  const [inspectUser, setInspectUser] = useState<FriendUser | null>(null);
 
   // Active selected league metadata
   const selectedLeague: LeagueDefinition = getLeagueById(selectedLeagueId);
@@ -432,14 +437,35 @@ export const LeaderboardsView: React.FC<LeaderboardsProps> = ({
 
                   {/* Candidate Row */}
                   <div
+                    onClick={() => {
+                      if (!item.isCurrentUser) {
+                        sounds.playClick();
+                        const targetId = item.id || `user_${item.username.replace('@', '')}`;
+                        setInspectUser({
+                          id: targetId,
+                          name: item.name,
+                          username: item.username,
+                          avatarUrl: item.avatarUrl,
+                          school: item.school,
+                          streakDays: item.streak,
+                          xp: item.xp,
+                          weeklyXp: item.xp,
+                          leagueId: selectedLeague.id,
+                          leagueName: selectedLeague.name,
+                          isFollowing: isUserFollowed(targetId),
+                          isFollower: false,
+                          isMutual: false,
+                        });
+                      }
+                    }}
                     className={`relative rounded-2xl p-3.5 sm:p-4 transition-all duration-150 flex items-center justify-between ${
                       item.isCurrentUser
                         ? 'bg-surface-container border-2 border-primary shadow-[0_3px_0_#46a302] ring-2 ring-primary/30'
                         : isPromotion
-                        ? 'bg-card-dark border border-primary/20 hover:bg-surface-variant'
+                        ? 'bg-card-dark border border-primary/20 hover:bg-surface-variant cursor-pointer group'
                         : isDemotion
-                        ? 'bg-card-dark border border-crimson-heart/20 hover:bg-surface-variant'
-                        : 'bg-card-dark border border-card-border hover:bg-surface-variant'
+                        ? 'bg-card-dark border border-crimson-heart/20 hover:bg-surface-variant cursor-pointer group'
+                        : 'bg-card-dark border border-card-border hover:bg-surface-variant cursor-pointer group'
                     }`}
                   >
                     <div className="flex items-center gap-3 sm:gap-4 min-w-0">
@@ -513,9 +539,14 @@ export const LeaderboardsView: React.FC<LeaderboardsProps> = ({
                           <span className="font-extrabold text-sm sm:text-base text-on-surface truncate">
                             {item.name}
                           </span>
-                          {item.isCurrentUser && (
+                          {item.isCurrentUser ? (
                             <span className="px-1.5 py-0.5 rounded bg-primary text-on-primary-fixed text-[10px] font-black uppercase shrink-0">
                               You
+                            </span>
+                          ) : (
+                            <span className="opacity-0 group-hover:opacity-100 text-[10px] text-primary font-bold uppercase transition-opacity flex items-center gap-0.5 shrink-0">
+                              <span className="material-symbols-outlined text-xs">person_add</span>
+                              <span>Follow</span>
                             </span>
                           )}
                           <span className="px-1.5 py-0.5 rounded bg-surface-container-high text-[10px] text-lightning-gold font-extrabold shrink-0 hidden sm:inline">
@@ -669,6 +700,16 @@ export const LeaderboardsView: React.FC<LeaderboardsProps> = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Candidate Profile / Follow Inspector Modal */}
+      {inspectUser && (
+        <UserProfileModal
+          currentUser={userStats}
+          targetUser={inspectUser}
+          onClose={() => setInspectUser(null)}
+          onUpdateStats={onUpdateStats}
+        />
       )}
     </div>
   );

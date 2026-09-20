@@ -50,6 +50,10 @@ const INITIAL_STATS: UserStats = {
   tournamentStage: 'none',
   questPoints: 0,
   storedBoosts: 0,
+  followingCount: 3,
+  followersCount: 3,
+  friendsQuestsEnabled: true,
+  blockedUserIds: [],
   isPro: false,
   soundEnabled: true,
   hapticsEnabled: true,
@@ -388,6 +392,7 @@ export const App: React.FC = () => {
             <LeaderboardsView
               userStats={userStats}
               onStartPractice={handleStartLesson}
+              onUpdateStats={handleUpdateStats}
             />
           )}
 
@@ -408,7 +413,12 @@ export const App: React.FC = () => {
           )}
 
           {activeTab === 'profile' && (
-            <ProfileView userStats={userStats} onOpenAuth={handleOpenAuth} />
+            <ProfileView
+              userStats={userStats}
+              onOpenAuth={handleOpenAuth}
+              onUpdateStats={handleUpdateStats}
+              onStartDrill={handleStartLesson}
+            />
           )}
 
           {(activeTab === 'more' || activeTab === 'settings') && (

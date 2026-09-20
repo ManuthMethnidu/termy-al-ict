@@ -7,6 +7,7 @@ import {
   testSupabaseConnection,
 } from '../../lib/supabase';
 import { signInWithGoogle, signOut, isUserAdmin } from '../../lib/auth';
+import { getBlockedUserIds, unblockUser } from '../../lib/friendsSystem';
 
 interface SettingsViewProps {
   userStats: UserStats;
@@ -43,6 +44,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   });
 
   const [authLoading, setAuthLoading] = useState<boolean>(false);
+  const [blockedUsers, setBlockedUsers] = useState<string[]>(() => getBlockedUserIds());
 
   const handleGoogleSignIn = async () => {
     setAuthLoading(true);
@@ -495,6 +497,76 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             </button>
           ))}
+        </div>
+      </section>
+
+      {/* Social, Privacy & Friends Quests */}
+      <section className="p-6 rounded-2xl bg-card-dark border border-card-border flex flex-col gap-4 shadow-sm">
+        <h2 className="text-base font-bold text-on-surface uppercase tracking-wider text-purple-400">
+          General & Friends Quests Privacy
+        </h2>
+
+        <div className="flex items-center justify-between py-2 border-b border-card-border/40">
+          <div className="flex flex-col pr-4">
+            <span className="text-sm font-bold text-on-surface">Participate in Friends Quests</span>
+            <span className="text-xs text-text-muted max-w-md leading-relaxed">
+              Allow mutual friends to pair with you in weekly cooperative challenges. Toggle off if you prefer studying completely solo without public targets.
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              sounds.playClick();
+              const next = userStats.friendsQuestsEnabled === false ? true : false;
+              onUpdateStats({ friendsQuestsEnabled: next });
+            }}
+            className={`w-12 h-7 rounded-full transition-colors relative flex items-center px-1 shrink-0 ${
+              userStats.friendsQuestsEnabled !== false ? 'bg-primary' : 'bg-gray-inactive'
+            }`}
+          >
+            <div
+              className={`w-5 h-5 rounded-full bg-white transition-transform ${
+                userStats.friendsQuestsEnabled !== false ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Blocked Accounts Management */}
+        <div className="flex flex-col gap-2 pt-1">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-bold text-on-surface">Blocked Accounts</span>
+            <span className="text-xs text-text-muted font-mono">{blockedUsers.length} Blocked</span>
+          </div>
+          <p className="text-xs text-text-muted">
+            Blocked accounts cannot follow you, view your social timeline milestones, or pair in team challenges.
+          </p>
+
+          {blockedUsers.length === 0 ? (
+            <span className="text-xs text-text-muted italic bg-surface-container/60 p-3 rounded-xl border border-card-border/50">
+              No blocked users. You can block any candidate by tapping their profile.
+            </span>
+          ) : (
+            <div className="flex flex-col gap-2 mt-1">
+              {blockedUsers.map((bId) => (
+                <div
+                  key={bId}
+                  className="p-2.5 rounded-xl bg-surface-container border border-card-border flex items-center justify-between"
+                >
+                  <span className="font-mono text-xs text-on-surface truncate">{bId}</span>
+                  <button
+                    onClick={async () => {
+                      sounds.playClick();
+                      await unblockUser(userStats.id || 'guest', bId);
+                      setBlockedUsers(getBlockedUserIds());
+                    }}
+                    className="px-3 py-1 bg-surface-container-high hover:bg-surface-variant text-text-muted hover:text-on-surface text-xs font-bold rounded-lg border border-card-border transition-colors"
+                  >
+                    Unblock
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

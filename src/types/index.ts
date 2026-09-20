@@ -75,6 +75,10 @@ export interface UserStats {
   questPoints?: number;
   boostActiveUntil?: number; // timestamp in ms for 2x XP boost
   storedBoosts?: number; // count of saved 15m / 30m boosts in inventory
+  followingCount?: number;
+  followersCount?: number;
+  friendsQuestsEnabled?: boolean; // toggle in Settings (default true)
+  blockedUserIds?: string[];
   isPro: boolean;
   soundEnabled: boolean;
   hapticsEnabled: boolean;
@@ -82,6 +86,57 @@ export interface UserStats {
   targetExamYear: number;
   completedLessons: string[];
   reviewedQuestionIds: string[];
+}
+
+export interface FriendUser {
+  id: string;
+  name: string;
+  username: string;
+  avatarUrl?: string;
+  school: string;
+  streakDays: number;
+  xp: number;
+  weeklyXp: number;
+  leagueId: number;
+  leagueName: string;
+  isFollowing: boolean;
+  isFollower: boolean;
+  isMutual: boolean;
+  hasFriendStreak?: boolean;
+  friendStreakDays?: number;
+  completedLessonToday?: boolean;
+}
+
+export interface FriendStreak {
+  id: string;
+  friendId: string;
+  friendName: string;
+  friendUsername: string;
+  friendAvatarUrl?: string;
+  streakDays: number;
+  userCompletedToday: boolean;
+  friendCompletedToday: boolean;
+  lastActiveDate: string;
+}
+
+export interface SocialActivity {
+  id: string;
+  userId: string;
+  userName: string;
+  userUsername: string;
+  userAvatarUrl?: string;
+  activityType: 'streak_milestone' | 'unit_mastered' | 'league_promoted' | 'drill_perfect';
+  title: string;
+  description: string;
+  timestamp: string;
+  timeAgo: string;
+  reactions: {
+    highFive: number; // 👋
+    congrats: number; // 🎉
+    celebrate: number; // 🚀
+    letsGo: number; // 🔥
+  };
+  userReaction?: 'highFive' | 'congrats' | 'celebrate' | 'letsGo';
 }
 
 export interface DailyQuest {
