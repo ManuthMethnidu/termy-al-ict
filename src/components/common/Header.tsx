@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavTab, UserStats } from '../../types';
 import { signInWithGoogle, signOut } from '../../lib/auth';
+import { getLeagueById } from '../../lib/leagueSystem';
 
 interface HeaderProps {
   userStats: UserStats;
@@ -19,6 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [authLoading, setAuthLoading] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const userLeagueDef = getLeagueById(userStats.leagueId || 1);
 
   const handleGoogleAuth = async () => {
     setAuthLoading(true);
@@ -68,6 +70,26 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Gamification Stats & Auth Profile */}
         <div className="flex items-center gap-2.5 sm:gap-4">
+          {/* League Pill */}
+          <button
+            onClick={() => onSelectTab('leaderboards')}
+            title={`${userStats.league || 'Bronze League'} — Division #${userStats.leagueGroupNumber || 1} • Click to view league cohort`}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-surface-container/60 border border-card-border/40 hover:border-primary/50 text-xs font-black transition-all cursor-pointer shadow-sm active:translate-y-0.5"
+          >
+            <span
+              className="material-symbols-outlined text-sm"
+              style={{
+                color: userLeagueDef.color,
+                fontVariationSettings: '"FILL" 1',
+              }}
+            >
+              {userLeagueDef.icon}
+            </span>
+            <span className="truncate max-w-[85px]" style={{ color: userLeagueDef.color }}>
+              {userLeagueDef.name}
+            </span>
+          </button>
+
           {/* Daily Streak */}
           <div
             title={`${userStats.streakDays} Day Study Streak`}

@@ -94,6 +94,7 @@ export const LiveMcqDrill: React.FC<LiveMcqDrillProps> = ({
       setSessionXpEarned((prev) => prev + earned);
       onUpdateStats({
         xp: userStats.xp + earned,
+        weeklyXp: (userStats.weeklyXp || 0) + earned,
         gems: userStats.gems + 2,
       });
 

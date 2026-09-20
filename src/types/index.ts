@@ -63,10 +63,15 @@ export interface UserStats {
   gems: number; // bits / diamonds
   hearts: number; // max 5
   maxHearts: number;
-  xp: number;
+  xp: number; // Total lifetime experience points
+  weeklyXp?: number; // Experience points earned in current week's league competition
   level: number;
-  league: string; // "Diamond League"
+  leagueId?: number; // 1 (Bronze) to 10 (Diamond)
+  league: string; // e.g. "Bronze League", "Diamond League"
   leagueRank: number;
+  leagueGroupNumber?: number; // division of up to 30 active learners
+  lastActiveWeek?: string; // e.g. "2026-W38"
+  tournamentStage?: 'none' | 'quarter_finals' | 'semi_finals' | 'finals' | 'champion';
   isPro: boolean;
   soundEnabled: boolean;
   hapticsEnabled: boolean;
@@ -100,6 +105,7 @@ export interface LeaderboardEntry {
   streak: number;
   xp: number;
   isCurrentUser?: boolean;
+  zone?: 'promote' | 'safe' | 'demote' | 'tournament';
 }
 
 export interface PowerUpItem {

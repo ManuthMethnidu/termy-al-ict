@@ -27,6 +27,7 @@ import {
   isUserAdmin,
 } from './lib/auth';
 import { sounds } from './lib/sound';
+import { getCurrentWeekId, checkAndApplyWeeklyReset } from './lib/leagueSystem';
 
 const INITIAL_STATS: UserStats = {
   name: 'Candidate',
@@ -39,9 +40,14 @@ const INITIAL_STATS: UserStats = {
   hearts: 5,
   maxHearts: 5,
   xp: 50,
+  weeklyXp: 50,
   level: 1,
-  league: 'Diamond League',
+  leagueId: 1,
+  league: 'Bronze League',
   leagueRank: 1,
+  leagueGroupNumber: 1,
+  lastActiveWeek: getCurrentWeekId(),
+  tournamentStage: 'none',
   isPro: false,
   soundEnabled: true,
   hapticsEnabled: true,
@@ -288,10 +294,29 @@ export const App: React.FC = () => {
     };
   }, []);
 
+  // Check and apply weekly league reset on mount
+  useEffect(() => {
+    const { updatedStats, resetOccurred, message } = checkAndApplyWeeklyReset(userStats);
+    if (resetOccurred) {
+      sounds.playFanfare();
+      setUserStats(updatedStats);
+      syncUserStatsToSupabase(updatedStats);
+      if (message) {
+        console.info('[Termy League Reset]:', message);
+      }
+    }
+  }, []);
+
   // Sync stats when updated
   const handleUpdateStats = (partial: Partial<UserStats>) => {
     setUserStats((prev) => {
       const next = { ...prev, ...partial };
+      if (partial.xp !== undefined && partial.weeklyXp === undefined) {
+        const delta = partial.xp - prev.xp;
+        if (delta > 0) {
+          next.weeklyXp = (prev.weeklyXp || 0) + delta;
+        }
+      }
       syncUserStatsToSupabase(next);
       return next;
     });
@@ -358,7 +383,10 @@ export const App: React.FC = () => {
           )}
 
           {activeTab === 'leaderboards' && (
-            <LeaderboardsView userStats={userStats} />
+            <LeaderboardsView
+              userStats={userStats}
+              onStartPractice={handleStartLesson}
+            />
           )}
 
           {activeTab === 'quests' && (

@@ -432,3 +432,167 @@ begin
   );
 end;
 $$;
+
+-- ----------------------------------------------------------
+-- 15. LEAGUE PROGRESSION SYSTEM (10 LEAGUES, 30-LEARNER COHORTS, WEEKLY RESETS, DIAMOND TOURNAMENT)
+-- ----------------------------------------------------------
+
+-- Table: 10 Official Leagues in strict order
+create table if not exists public.leagues (
+  id integer primary key,
+  name text not null,
+  tier_label text not null,
+  color text not null,
+  promote_cutoff integer default 7 not null, -- Top 7 promote (or Top 10 for Diamond Tournament)
+  demote_cutoff integer default 5 not null,  -- Bottom 5 demote (0 for Bronze)
+  created_at timestamptz default timezone('utc'::text, now()) not null
+);
+
+-- Seed all 10 Official Leagues in exact order
+insert into public.leagues (id, name, tier_label, color, promote_cutoff, demote_cutoff)
+values
+  (1, 'Bronze', 'Tier I', '#CD7F32', 7, 0),
+  (2, 'Silver', 'Tier II', '#C0C0C0', 7, 5),
+  (3, 'Gold', 'Tier III', '#FFD700', 7, 5),
+  (4, 'Sapphire', 'Tier IV', '#2563EB', 7, 5),
+  (5, 'Ruby', 'Tier V', '#E11D48', 7, 5),
+  (6, 'Emerald', 'Tier VI', '#10B981', 7, 5),
+  (7, 'Amethyst', 'Tier VII', '#9333EA', 7, 5),
+  (8, 'Pearl', 'Tier VIII', '#F1F5F9', 7, 5),
+  (9, 'Obsidian', 'Tier IX', '#818CF8', 7, 5),
+  (10, 'Diamond', 'Tier X', '#38BDF8', 10, 5)
+on conflict (id) do update set
+  name = excluded.name,
+  tier_label = excluded.tier_label,
+  color = excluded.color,
+  promote_cutoff = excluded.promote_cutoff,
+  demote_cutoff = excluded.demote_cutoff;
+
+-- Add League columns to profiles table
+alter table public.profiles
+  add column if not exists league_id integer default 1 references public.leagues(id),
+  add column if not exists weekly_xp integer default 0,
+  add column if not exists league_group_number integer default 1,
+  add column if not exists last_active_week text,
+  add column if not exists tournament_stage text default 'none';
+
+-- Table: Weekly League Cohort Participants (Up to 30 active learners per group)
+create table if not exists public.league_participants (
+  id uuid primary key default gen_random_uuid(),
+  week_id text not null, -- e.g. '2026-W38'
+  league_id integer not null references public.leagues(id) on delete cascade,
+  group_number integer not null default 1,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  weekly_xp integer default 0 not null,
+  joined_at timestamptz default timezone('utc'::text, now()) not null,
+  updated_at timestamptz default timezone('utc'::text, now()) not null,
+  unique(week_id, user_id)
+);
+
+create index if not exists idx_league_participants_cohort
+  on public.league_participants(week_id, league_id, group_number, weekly_xp desc);
+
+-- Enable RLS
+alter table public.leagues enable row level security;
+alter table public.league_participants enable row level security;
+
+create policy "Allow public read of leagues"
+  on public.leagues for select
+  using (true);
+
+create policy "Allow public read of league participants"
+  on public.league_participants for select
+  using (true);
+
+create policy "Allow user insert own league participation"
+  on public.league_participants for insert
+  to authenticated
+  with check ((select auth.uid()) = user_id);
+
+create policy "Allow user update own league participation"
+  on public.league_participants for update
+  to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+-- RPC: Record League XP and automatically assign 30-member division
+create or replace function public.record_weekly_league_xp(
+  p_xp_delta integer,
+  p_week_id text
+)
+returns jsonb
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_user_id uuid;
+  v_league_id integer;
+  v_group_number integer;
+  v_group_count integer;
+  v_existing_row public.league_participants%rowtype;
+begin
+  v_user_id := auth.uid();
+  if v_user_id is null then
+    return jsonb_build_object('success', false, 'message', 'Unauthenticated');
+  end if;
+
+  -- Get candidate's current league
+  select coalesce(league_id, 1) into v_league_id
+  from public.profiles
+  where id = v_user_id;
+
+  -- Check if user already joined this week's cohort
+  select * into v_existing_row
+  from public.league_participants
+  where week_id = p_week_id and user_id = v_user_id;
+
+  if found then
+    -- Update existing participant row
+    update public.league_participants
+    set
+      weekly_xp = weekly_xp + p_xp_delta,
+      updated_at = timezone('utc'::text, now())
+    where id = v_existing_row.id;
+
+    v_group_number := v_existing_row.group_number;
+  else
+    -- Find open group with < 30 members for this league and week
+    select group_number, count(*) into v_group_number, v_group_count
+    from public.league_participants
+    where week_id = p_week_id and league_id = v_league_id
+    group by group_number
+    having count(*) < 30
+    order by group_number asc
+    limit 1;
+
+    -- If no open group found, assign next group number
+    if v_group_number is null then
+      select coalesce(max(group_number), 0) + 1 into v_group_number
+      from public.league_participants
+      where week_id = p_week_id and league_id = v_league_id;
+    end if;
+
+    -- Insert user into cohort division
+    insert into public.league_participants (week_id, league_id, group_number, user_id, weekly_xp)
+    values (p_week_id, v_league_id, v_group_number, v_user_id, p_xp_delta);
+  end if;
+
+  -- Update profiles table
+  update public.profiles
+  set
+    xp = xp + p_xp_delta,
+    weekly_xp = coalesce(case when last_active_week = p_week_id then weekly_xp else 0 end, 0) + p_xp_delta,
+    league_group_number = v_group_number,
+    last_active_week = p_week_id,
+    updated_at = timezone('utc'::text, now())
+  where id = v_user_id;
+
+  return jsonb_build_object(
+    'success', true,
+    'league_id', v_league_id,
+    'group_number', v_group_number,
+    'week_id', p_week_id
+  );
+end;
+$$;
+

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { UserStats } from '../../types';
 import { getRealUnitMastery, getLocalAttempts } from '../../lib/supabase';
 import { signInWithGoogle, signOut } from '../../lib/auth';
+import { getLeagueById } from '../../lib/leagueSystem';
 
 interface ProfileViewProps {
   userStats: UserStats;
@@ -12,6 +13,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ userStats, onOpenAuth 
   const [authLoading, setAuthLoading] = useState(false);
   const unitMasteries = getRealUnitMastery();
   const attempts = getLocalAttempts();
+  const leagueDef = getLeagueById(userStats.leagueId || 1);
 
   const totalAttempted = attempts.length;
   const totalCorrect = attempts.filter((a) => a.isCorrect).length;
@@ -130,6 +132,47 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ userStats, onOpenAuth 
               )}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Current League Progression Card */}
+      <div
+        className={`p-5 rounded-2xl border-2 ${leagueDef.borderColor} bg-gradient-to-r ${leagueDef.gradient} flex items-center justify-between shadow-lg`}
+      >
+        <div className="flex items-center gap-4">
+          <div
+            className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${leagueDef.badgeBg}`}
+            style={{ color: leagueDef.color }}
+          >
+            <span
+              className="material-symbols-outlined text-3xl"
+              style={{ fontVariationSettings: '"FILL" 1' }}
+            >
+              {leagueDef.icon}
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-black text-on-surface">{leagueDef.name} League</h3>
+              <span className="px-2 py-0.5 rounded-full bg-surface-container/80 border border-card-border/60 text-[10px] font-black uppercase text-text-muted">
+                {leagueDef.tierLabel}
+              </span>
+            </div>
+            <span className="text-xs text-text-muted mt-0.5">
+              Division #{userStats.leagueGroupNumber || 1} • {userStats.weeklyXp || userStats.xp || 0} Weekly XP
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-end">
+          <span className="text-xs font-mono font-bold text-lightning-gold">
+            Rank #{userStats.leagueRank || 1}
+          </span>
+          <span className="text-[11px] text-text-muted">
+            {userStats.leagueId === 10
+              ? 'Diamond Tournament Tier'
+              : `Top ${leagueDef.minPromoteRank} Promotes`}
+          </span>
         </div>
       </div>
 

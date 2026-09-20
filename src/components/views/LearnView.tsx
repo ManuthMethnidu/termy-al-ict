@@ -347,12 +347,12 @@ export const LearnView: React.FC<LearnViewProps> = ({
           </div>
         </div>
 
-        {/* Diamond League Mini Leaderboard */}
+        {/* League Mini Leaderboard */}
         <div className="rounded-xl bg-card-dark border-2 border-card-border p-5 shadow-[0_3px_0_#242e34]">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-secondary text-xl">trophy</span>
-              <h4 className="font-bold text-base text-on-surface">Diamond League</h4>
+              <h4 className="font-bold text-base text-on-surface">{userStats.league || 'Bronze League'}</h4>
             </div>
             <button
               onClick={() => onSelectTab('leaderboards')}

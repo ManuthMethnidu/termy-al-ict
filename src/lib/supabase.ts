@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { LeaderboardEntry, DailyQuest, UserStats } from '../types';
+import { generateLeagueCohort } from './leagueSystem';
 
 export interface LocalAttempt {
   id: string;
@@ -167,6 +168,11 @@ export async function syncUserStatsToSupabase(stats: UserStats) {
           batch: stats.batch,
           streak_days: stats.streakDays,
           xp: stats.xp,
+          weekly_xp: stats.weeklyXp ?? stats.xp,
+          league_id: stats.leagueId ?? 1,
+          league_group_number: stats.leagueGroupNumber ?? 1,
+          last_active_week: stats.lastActiveWeek,
+          tournament_stage: stats.tournamentStage ?? 'none',
           gems: stats.gems,
           hearts: stats.hearts,
           is_pro: stats.isPro,
@@ -396,119 +402,35 @@ export function getRealDailyQuests(streakDays: number): DailyQuest[] {
 }
 
 /**
- * Fetch REAL Leaderboard from Supabase profiles / leaderboard_view
+ * Fetch REAL Leaderboard for a League Division (Cohort of up to 30 active learners)
  */
-export async function fetchRealLeaderboard(currentUserStats: UserStats): Promise<LeaderboardEntry[]> {
+export async function fetchRealLeaderboard(
+  currentUserStats: UserStats,
+  leagueId?: number,
+  groupNumber?: number
+): Promise<LeaderboardEntry[]> {
+  const activeLeagueId = leagueId || currentUserStats.leagueId || 1;
+  const activeGroup = groupNumber || currentUserStats.leagueGroupNumber || 1;
   const client = getSupabaseClient();
-  if (!client) {
-    // Return real current user only (0 fake accounts)
-    return [
-      {
-        rank: 1,
-        id: currentUserStats.id || 'local_user',
-        name: currentUserStats.name,
-        username: currentUserStats.username,
-        avatarUrl: currentUserStats.avatarUrl,
-        school: currentUserStats.school,
-        level: `L${currentUserStats.level || 1}`,
-        streak: currentUserStats.streakDays,
-        xp: currentUserStats.xp,
-        isCurrentUser: true,
-      },
-    ];
-  }
 
-  try {
-    // Try querying leaderboard_view
-    const { data: viewData, error: viewError } = await client
-      .from('leaderboard_view')
-      .select('*')
-      .limit(50);
+  let realProfiles: any[] = [];
 
-    let profiles = viewData;
-
-    if (viewError || !profiles || profiles.length === 0) {
-      // Fallback directly to profiles table
-      const { data: profData } = await client
+  if (client) {
+    try {
+      const { data, error } = await client
         .from('profiles')
         .select('*')
         .order('xp', { ascending: false })
-        .limit(50);
-      profiles = profData || [];
+        .limit(30);
+
+      if (!error && data) {
+        realProfiles = data;
+      }
+    } catch (err) {
+      console.warn('Leaderboard Supabase fetch notice:', err);
     }
-
-    if (!profiles || profiles.length === 0) {
-      return [
-        {
-          rank: 1,
-          id: currentUserStats.id || 'local_user',
-          name: currentUserStats.name,
-          username: currentUserStats.username,
-          avatarUrl: currentUserStats.avatarUrl,
-          school: currentUserStats.school,
-          level: `L${currentUserStats.level || 1}`,
-          streak: currentUserStats.streakDays,
-          xp: currentUserStats.xp,
-          isCurrentUser: true,
-        },
-      ];
-    }
-
-    const currentUserId = currentUserStats.id;
-    let foundCurrent = false;
-
-    const entries: LeaderboardEntry[] = profiles.map((p: any, index: number) => {
-      const isCurrent = (currentUserId && p.id === currentUserId) || p.username === currentUserStats.username;
-      if (isCurrent) foundCurrent = true;
-
-      const userLvl = Math.max(1, Math.floor((p.xp || 0) / 400) + 1);
-
-      return {
-        rank: p.rank || index + 1,
-        id: p.id,
-        name: p.display_name || p.username || 'Candidate',
-        username: p.username ? (p.username.startsWith('@') ? p.username : `@${p.username}`) : '@candidate',
-        avatarUrl: p.avatar_url,
-        school: p.school || 'Physical Science & ICT Stream',
-        level: `L${userLvl}`,
-        streak: p.streak_days || 0,
-        xp: p.xp || 0,
-        isCurrentUser: isCurrent,
-      };
-    });
-
-    // If current user is not in top list, add at appropriate position or end
-    if (!foundCurrent) {
-      entries.push({
-        rank: entries.length + 1,
-        id: currentUserStats.id || 'local_user',
-        name: currentUserStats.name,
-        username: currentUserStats.username,
-        avatarUrl: currentUserStats.avatarUrl,
-        school: currentUserStats.school,
-        level: `L${currentUserStats.level || 1}`,
-        streak: currentUserStats.streakDays,
-        xp: currentUserStats.xp,
-        isCurrentUser: true,
-      });
-    }
-
-    return entries;
-  } catch (err) {
-    console.warn('Leaderboard fetch fallback to current user:', err);
-    return [
-      {
-        rank: 1,
-        id: currentUserStats.id || 'local_user',
-        name: currentUserStats.name,
-        username: currentUserStats.username,
-        avatarUrl: currentUserStats.avatarUrl,
-        school: currentUserStats.school,
-        level: `L${currentUserStats.level || 1}`,
-        streak: currentUserStats.streakDays,
-        xp: currentUserStats.xp,
-        isCurrentUser: true,
-      },
-    ];
   }
+
+  // Generate full 30-member competitive cohort for this league
+  return generateLeagueCohort(activeLeagueId, activeGroup, currentUserStats, realProfiles);
 }

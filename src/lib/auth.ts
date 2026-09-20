@@ -1,6 +1,7 @@
 import { User, Session } from '@supabase/supabase-js';
 import { getSupabaseClient } from './supabase';
 import { UserStats } from '../types';
+import { getLeagueById } from './leagueSystem';
 
 export interface AuthProfile {
   id: string;
@@ -299,6 +300,12 @@ export async function fetchUserProfile(userId: string): Promise<Partial<UserStat
       batch: data.batch,
       streakDays: data.streak_days || 0,
       xp: data.xp || 0,
+      weeklyXp: data.weekly_xp ?? data.xp ?? 0,
+      leagueId: data.league_id || 1,
+      league: `${getLeagueById(data.league_id || 1).name} League`,
+      leagueGroupNumber: data.league_group_number || 1,
+      lastActiveWeek: data.last_active_week,
+      tournamentStage: data.tournament_stage || 'none',
       gems: data.gems || 100,
       hearts: data.hearts || 5,
       isPro: data.is_pro || false,
