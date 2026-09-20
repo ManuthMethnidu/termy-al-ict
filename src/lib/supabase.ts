@@ -178,6 +178,12 @@ export async function syncUserStatsToSupabase(stats: UserStats) {
           hearts: stats.hearts,
           is_pro: stats.isPro,
           target_exam_year: stats.targetExamYear,
+          quest_points: stats.questPoints ?? 0,
+          boost_active_until: stats.boostActiveUntil ?? null,
+          stored_boosts: stats.storedBoosts ?? 0,
+          friends_quests_enabled: stats.friendsQuestsEnabled ?? true,
+          following_count: stats.followingCount ?? 0,
+          followers_count: stats.followersCount ?? 0,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'id' }

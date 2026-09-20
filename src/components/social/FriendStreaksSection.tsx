@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FriendStreak, UserStats } from '../../types';
-import { getFriendStreaks } from '../../lib/friendsSystem';
+import { getFriendStreaks, fetchFriendStreaks } from '../../lib/friendsSystem';
 import { sounds } from '../../lib/sound';
 
 interface FriendStreaksSectionProps {
@@ -14,9 +14,17 @@ export const FriendStreaksSection: React.FC<FriendStreaksSectionProps> = ({
   onOpenAddFriends,
   onStartDrill,
 }) => {
-  const [streaks] = useState<FriendStreak[]>(() => getFriendStreaks(currentUser));
+  const [streaks, setStreaks] = useState<FriendStreak[]>(() => getFriendStreaks(currentUser));
   const [nudgedFriends, setNudgedFriends] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchFriendStreaks(currentUser).then((latest) => {
+      if (latest && latest.length > 0) {
+        setStreaks(latest);
+      }
+    });
+  }, [currentUser.id]);
 
   const handleNudge = (streak: FriendStreak) => {
     sounds.playClick();

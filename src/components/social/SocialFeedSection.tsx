@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SocialActivity, FriendUser } from '../../types';
-import { getSocialFeed, reactToActivity } from '../../lib/friendsSystem';
+import { getSocialFeed, fetchSocialFeed, reactToActivity } from '../../lib/friendsSystem';
 import { sounds } from '../../lib/sound';
 import confetti from 'canvas-confetti';
 
@@ -14,6 +14,14 @@ export const SocialFeedSection: React.FC<SocialFeedSectionProps> = ({
   onOpenAddFriends,
 }) => {
   const [feed, setFeed] = useState<SocialActivity[]>(() => getSocialFeed());
+
+  useEffect(() => {
+    fetchSocialFeed().then((latest) => {
+      if (latest && latest.length > 0) {
+        setFeed(latest);
+      }
+    });
+  }, []);
 
   const handleReact = (
     activityId: string,

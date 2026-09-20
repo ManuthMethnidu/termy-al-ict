@@ -10,7 +10,7 @@ const FEED_STORAGE_KEY = 'termy_social_feed_v1';
 // Seed directory of active Sri Lankan A/L ICT Candidates
 export const SEED_CANDIDATES: FriendUser[] = [
   {
-    id: 'user_kavindu_01',
+    id: 'a1111111-1111-4111-a111-111111111111',
     name: 'Kavindu Senanayake',
     username: '@kavindu_royal',
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
@@ -28,7 +28,7 @@ export const SEED_CANDIDATES: FriendUser[] = [
     completedLessonToday: true,
   },
   {
-    id: 'user_hansi_02',
+    id: 'a2222222-2222-4222-a222-222222222222',
     name: 'Hansi Perera',
     username: '@hansi_visakha',
     avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
@@ -46,7 +46,7 @@ export const SEED_CANDIDATES: FriendUser[] = [
     completedLessonToday: true,
   },
   {
-    id: 'user_dineth_03',
+    id: 'a3333333-3333-4333-a333-333333333333',
     name: 'Dineth Jayasuriya',
     username: '@dineth_ananda',
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
@@ -63,7 +63,7 @@ export const SEED_CANDIDATES: FriendUser[] = [
     completedLessonToday: false,
   },
   {
-    id: 'user_shenaya_04',
+    id: 'a4444444-4444-4444-a444-444444444444',
     name: 'Shenaya Fernando',
     username: '@shenaya_mew',
     avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
@@ -80,7 +80,7 @@ export const SEED_CANDIDATES: FriendUser[] = [
     completedLessonToday: true,
   },
   {
-    id: 'user_tharindu_05',
+    id: 'a5555555-5555-4555-a555-555555555555',
     name: 'Tharindu Wickrama',
     username: '@tharindu_mahinda',
     avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
@@ -97,7 +97,7 @@ export const SEED_CANDIDATES: FriendUser[] = [
     completedLessonToday: false,
   },
   {
-    id: 'user_nethmi_06',
+    id: 'a6666666-6666-4666-a666-666666666666',
     name: 'Nethmi Rathnayake',
     username: '@nethmi_devi',
     avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
@@ -125,7 +125,10 @@ export interface FollowState {
  */
 export function getLocalFollowState(): FollowState {
   if (typeof window === 'undefined') {
-    return { followingIds: ['user_kavindu_01', 'user_hansi_02', 'user_shenaya_04'], followerIds: ['user_kavindu_01', 'user_hansi_02', 'user_dineth_03'] };
+    return {
+      followingIds: ['a1111111-1111-4111-a111-111111111111', 'a2222222-2222-4222-a222-222222222222', 'a4444444-4444-4444-a444-444444444444'],
+      followerIds: ['a1111111-1111-4111-a111-111111111111', 'a2222222-2222-4222-a222-222222222222', 'a3333333-3333-4333-a333-333333333333'],
+    };
   }
   try {
     const saved = localStorage.getItem(FOLLOWS_STORAGE_KEY);
@@ -135,8 +138,8 @@ export function getLocalFollowState(): FollowState {
   }
   // Default sample network: following Kavindu, Hansi, Shenaya; followed by Kavindu, Hansi, Dineth
   return {
-    followingIds: ['user_kavindu_01', 'user_hansi_02', 'user_shenaya_04'],
-    followerIds: ['user_kavindu_01', 'user_hansi_02', 'user_dineth_03'],
+    followingIds: ['a1111111-1111-4111-a111-111111111111', 'a2222222-2222-4222-a222-222222222222', 'a4444444-4444-4444-a444-444444444444'],
+    followerIds: ['a1111111-1111-4111-a111-111111111111', 'a2222222-2222-4222-a222-222222222222', 'a3333333-3333-4333-a333-333333333333'],
   };
 }
 
@@ -297,17 +300,52 @@ export async function getAllFriendsList(
 ): Promise<{ following: FriendUser[]; followers: FriendUser[]; mutual: FriendUser[]; suggestions: FriendUser[] }> {
   const followState = getLocalFollowState();
   const blockedIds = getBlockedUserIds();
+  const activeStreaksMap = new Map<string, number>();
+
+  const client = getSupabaseClient();
+  if (client && currentUserId) {
+    try {
+      const [followsRes, followersRes, blockedRes, streaksRes] = await Promise.all([
+        client.from('user_follows').select('following_id').eq('follower_id', currentUserId),
+        client.from('user_follows').select('follower_id').eq('following_id', currentUserId),
+        client.from('blocked_users').select('blocked_id').eq('user_id', currentUserId),
+        client.from('friend_streaks').select('*').or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`),
+      ]);
+
+      if (followsRes.data && followsRes.data.length > 0) {
+        followState.followingIds = followsRes.data.map((r: any) => r.following_id);
+      }
+      if (followersRes.data && followersRes.data.length > 0) {
+        followState.followerIds = followersRes.data.map((r: any) => r.follower_id);
+      }
+      if (blockedRes.data) {
+        blockedRes.data.forEach((r: any) => {
+          if (!blockedIds.includes(r.blocked_id)) blockedIds.push(r.blocked_id);
+        });
+      }
+      saveLocalFollowState(followState);
+      saveBlockedUserIds(blockedIds);
+
+      if (streaksRes.data) {
+        streaksRes.data.forEach((s: any) => {
+          const friendId = s.user1_id === currentUserId ? s.user2_id : s.user1_id;
+          activeStreaksMap.set(friendId, s.streak_days);
+        });
+      }
+    } catch (e) {
+      console.warn('Supabase relations sync error:', e);
+    }
+  }
 
   // Fetch real profiles from Supabase if available
   let pool = [...SEED_CANDIDATES];
-  const client = getSupabaseClient();
   if (client) {
     try {
       const { data } = await client
         .from('profiles')
         .select('id, display_name, username, avatar_url, school, streak_days, xp, weekly_xp, league_id')
         .neq('id', currentUserId || '')
-        .limit(25);
+        .limit(30);
 
       if (data && data.length > 0) {
         const remoteCandidates: FriendUser[] = data.map((p) => {
@@ -335,6 +373,9 @@ export async function getAllFriendsList(
         remoteCandidates.forEach((rc) => {
           if (!existingIds.has(rc.id)) {
             pool.push(rc);
+          } else {
+            const idx = pool.findIndex((c) => c.id === rc.id);
+            if (idx !== -1) pool[idx] = { ...pool[idx], ...rc };
           }
         });
       }
@@ -351,14 +392,26 @@ export async function getAllFriendsList(
     const isFollowing = followState.followingIds.includes(user.id);
     const isFollower = followState.followerIds.includes(user.id);
     const isMutual = isFollowing && isFollower;
+    const hasFriendStreak =
+      isMutual &&
+      (activeStreaksMap.has(user.id) ||
+        user.id === 'a1111111-1111-4111-a111-111111111111' ||
+        user.id === 'a2222222-2222-4222-a222-222222222222');
+    const friendStreakDays =
+      activeStreaksMap.get(user.id) ??
+      (user.id === 'a1111111-1111-4111-a111-111111111111'
+        ? 14
+        : user.id === 'a2222222-2222-4222-a222-222222222222'
+        ? 7
+        : 0);
 
     return {
       ...user,
       isFollowing,
       isFollower,
       isMutual,
-      hasFriendStreak: isMutual && (user.id === 'user_kavindu_01' || user.id === 'user_hansi_02'),
-      friendStreakDays: user.id === 'user_kavindu_01' ? 14 : user.id === 'user_hansi_02' ? 7 : 0,
+      hasFriendStreak,
+      friendStreakDays,
     };
   });
 
@@ -415,7 +468,7 @@ export function getFriendStreaks(currentUser: UserStats): FriendStreak[] {
   const defaultStreaks: FriendStreak[] = [
     {
       id: 'fs_kavindu',
-      friendId: 'user_kavindu_01',
+      friendId: 'a1111111-1111-4111-a111-111111111111',
       friendName: 'Kavindu Senanayake',
       friendUsername: '@kavindu_royal',
       friendAvatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
@@ -426,7 +479,7 @@ export function getFriendStreaks(currentUser: UserStats): FriendStreak[] {
     },
     {
       id: 'fs_hansi',
-      friendId: 'user_hansi_02',
+      friendId: 'a2222222-2222-4222-a222-222222222222',
       friendName: 'Hansi Perera',
       friendUsername: '@hansi_visakha',
       friendAvatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
@@ -448,6 +501,58 @@ export function saveFriendStreaks(streaks: FriendStreak[]): void {
       console.warn('Failed to save friend streaks', e);
     }
   }
+}
+
+/**
+ * Fetch friend streaks from Supabase with fallback to local
+ */
+export async function fetchFriendStreaks(currentUser: UserStats): Promise<FriendStreak[]> {
+  const client = getSupabaseClient();
+  if (client && currentUser.id) {
+    try {
+      const { data, error } = await client
+        .from('friend_streaks')
+        .select('*')
+        .or(`user1_id.eq.${currentUser.id},user2_id.eq.${currentUser.id}`);
+
+      if (error) {
+        console.warn('Error fetching friend streaks from Supabase:', error.message);
+        return getFriendStreaks(currentUser);
+      }
+
+      if (data && data.length > 0) {
+        const friendIds = data.map((r: any) => (r.user1_id === currentUser.id ? r.user2_id : r.user1_id));
+        const { data: profiles } = await client
+          .from('profiles')
+          .select('id, display_name, username, avatar_url')
+          .in('id', friendIds);
+
+        const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+
+        const streaks: FriendStreak[] = data.map((r: any) => {
+          const isUser1 = r.user1_id === currentUser.id;
+          const friendId = isUser1 ? r.user2_id : r.user1_id;
+          const prof = profileMap.get(friendId);
+          return {
+            id: r.id,
+            friendId,
+            friendName: prof?.display_name || 'Study Partner',
+            friendUsername: prof?.username ? `@${prof.username}` : '@buddy',
+            friendAvatarUrl: prof?.avatar_url,
+            streakDays: r.streak_days,
+            userCompletedToday: isUser1 ? r.user1_completed_today : r.user2_completed_today,
+            friendCompletedToday: isUser1 ? r.user2_completed_today : r.user1_completed_today,
+            lastActiveDate: r.last_activity_date,
+          };
+        });
+        saveFriendStreaks(streaks);
+        return streaks;
+      }
+    } catch (e) {
+      console.warn('Failed to fetch friend streaks from Supabase:', e);
+    }
+  }
+  return getFriendStreaks(currentUser);
 }
 
 /**
@@ -486,6 +591,32 @@ export async function startFriendStreak(
   const nextStreaks = [...streaks, newStreak];
   saveFriendStreaks(nextStreaks);
 
+  // Sync to Supabase
+  const client = getSupabaseClient();
+  if (client && currentUser.id && friend.id) {
+    const [u1, u2] = currentUser.id < friend.id ? [currentUser.id, friend.id] : [friend.id, currentUser.id];
+    const isUser1 = currentUser.id === u1;
+    Promise.resolve(
+      client
+        .from('friend_streaks')
+        .upsert(
+          {
+            user1_id: u1,
+            user2_id: u2,
+            streak_days: 1,
+            user1_completed_today: isUser1,
+            user2_completed_today: !isUser1,
+            last_activity_date: new Date().toISOString().split('T')[0],
+          },
+          { onConflict: 'user1_id,user2_id' }
+        )
+    )
+      .then((res: any) => {
+        if (res?.error) console.warn('Supabase friend streak upsert error:', res.error.message);
+      })
+      .catch((err: any) => console.warn('Supabase friend streak exception:', err));
+  }
+
   return {
     success: true,
     message: `🔥 Friend Streak initiated with ${friend.name}! Complete at least 1 lesson daily to keep this flame burning!`,
@@ -512,7 +643,7 @@ export function getSocialFeed(): SocialActivity[] {
   const defaultFeed: SocialActivity[] = [
     {
       id: 'act_01',
-      userId: 'user_kavindu_01',
+      userId: 'a1111111-1111-4111-a111-111111111111',
       userName: 'Kavindu Senanayake',
       userUsername: '@kavindu_royal',
       userAvatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
@@ -525,7 +656,7 @@ export function getSocialFeed(): SocialActivity[] {
     },
     {
       id: 'act_02',
-      userId: 'user_hansi_02',
+      userId: 'a2222222-2222-4222-a222-222222222222',
       userName: 'Hansi Perera',
       userUsername: '@hansi_visakha',
       userAvatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
@@ -538,7 +669,7 @@ export function getSocialFeed(): SocialActivity[] {
     },
     {
       id: 'act_03',
-      userId: 'user_shenaya_04',
+      userId: 'a4444444-4444-4444-a444-444444444444',
       userName: 'Shenaya Fernando',
       userUsername: '@shenaya_mew',
       userAvatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
@@ -551,7 +682,7 @@ export function getSocialFeed(): SocialActivity[] {
     },
     {
       id: 'act_04',
-      userId: 'user_dineth_03',
+      userId: 'a3333333-3333-4333-a333-333333333333',
       userName: 'Dineth Jayasuriya',
       userUsername: '@dineth_ananda',
       userAvatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
@@ -575,6 +706,61 @@ export function saveSocialFeed(feed: SocialActivity[]): void {
       console.warn('Failed to save social feed', e);
     }
   }
+}
+
+/**
+ * Fetch live social timeline from Supabase with fallback to local
+ */
+export async function fetchSocialFeed(): Promise<SocialActivity[]> {
+  const client = getSupabaseClient();
+  if (client) {
+    try {
+      const { data, error } = await client
+        .from('social_activities')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(25);
+
+      if (error) {
+        console.warn('Error fetching social feed from Supabase:', error.message);
+        return getSocialFeed();
+      }
+
+      if (data && data.length > 0) {
+        const userIds = Array.from(new Set(data.map((r: any) => r.user_id)));
+        const { data: profiles } = await client
+          .from('profiles')
+          .select('id, display_name, username, avatar_url')
+          .in('id', userIds);
+
+        const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+
+        const feed: SocialActivity[] = data.map((r: any) => {
+          const prof = profileMap.get(r.user_id);
+          const createdDate = new Date(r.created_at);
+          const diffHours = Math.max(1, Math.round((Date.now() - createdDate.getTime()) / 3600000));
+          return {
+            id: r.id,
+            userId: r.user_id,
+            userName: prof?.display_name || 'ICT Candidate',
+            userUsername: prof?.username ? `@${prof.username}` : '@candidate',
+            userAvatarUrl: prof?.avatar_url,
+            activityType: r.activity_type,
+            title: r.title,
+            description: r.description,
+            timestamp: r.created_at,
+            timeAgo: diffHours < 24 ? `${diffHours}h ago` : `${Math.floor(diffHours / 24)}d ago`,
+            reactions: r.reactions || { highFive: 0, congrats: 0, celebrate: 0, letsGo: 0 },
+          };
+        });
+        saveSocialFeed(feed);
+        return feed;
+      }
+    } catch (e) {
+      console.warn('Failed to fetch social feed from Supabase:', e);
+    }
+  }
+  return getSocialFeed();
 }
 
 /**
@@ -606,6 +792,21 @@ export function reactToActivity(
 
   feed[idx] = act;
   saveSocialFeed(feed);
+
+  // Sync reaction update to Supabase in background
+  const client = getSupabaseClient();
+  if (client) {
+    Promise.resolve(
+      client
+        .from('social_activities')
+        .update({ reactions: act.reactions })
+        .eq('id', activityId)
+    )
+      .then((res: any) => {
+        if (res?.error) console.warn('Failed to sync reaction to Supabase:', res.error.message);
+      })
+      .catch((e: any) => console.warn('Reaction sync error:', e));
+  }
 
   return { feed, activity: act };
 }

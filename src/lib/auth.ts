@@ -310,6 +310,12 @@ export async function fetchUserProfile(userId: string): Promise<Partial<UserStat
       hearts: data.hearts || 5,
       isPro: data.is_pro || false,
       targetExamYear: data.target_exam_year || 2025,
+      questPoints: data.quest_points ?? 0,
+      boostActiveUntil: data.boost_active_until ? Number(data.boost_active_until) : undefined,
+      storedBoosts: data.stored_boosts ?? 0,
+      friendsQuestsEnabled: data.friends_quests_enabled ?? true,
+      followingCount: data.following_count ?? 0,
+      followersCount: data.followers_count ?? 0,
       authProvider: data.avatar_url?.includes('google') ? 'google' : 'email',
     };
   } catch (err) {
