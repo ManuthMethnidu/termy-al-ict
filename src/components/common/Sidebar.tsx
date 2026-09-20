@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavTab, UserStats } from '../../types';
+import { isUserAdmin } from '../../lib/auth';
 
 interface SidebarProps {
   activeTab: NavTab;
@@ -194,16 +195,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelectTab('admin');
-              }}
-              title="Root Admin Terminal"
-              className="text-text-muted hover:text-primary p-1 transition-colors"
-            >
-              <span className="material-symbols-outlined text-lg">shield</span>
-            </button>
+            {isUserAdmin(userStats.email) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectTab('admin');
+                }}
+                title="Root Admin Terminal"
+                className="text-text-muted hover:text-primary p-1 transition-colors"
+              >
+                <span className="material-symbols-outlined text-lg">shield</span>
+              </button>
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation();

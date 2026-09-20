@@ -79,6 +79,36 @@ export async function handleAuthCallback(): Promise<void> {
   }
 }
 
+export const PRODUCTION_DOMAIN = 'https://termy.dpdns.org';
+export const ADMIN_EMAIL = 'methnidumanuth@gmail.com';
+
+/**
+ * Determine if an email address belongs to the root administrator
+ */
+export function isUserAdmin(email?: string | null): boolean {
+  if (!email) return false;
+  return email.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim();
+}
+
+/**
+ * Compute the correct redirect URL for OAuth authentication
+ */
+export function getAuthRedirectUrl(): string {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    const origin = window.location.origin.replace(/\/+$/, '');
+    // If in local dev on localhost or 127.0.0.1
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return origin;
+    }
+    // If on termy.dpdns.org or custom domain
+    if (origin.includes('dpdns.org')) {
+      return PRODUCTION_DOMAIN;
+    }
+    return origin;
+  }
+  return PRODUCTION_DOMAIN;
+}
+
 /**
  * Trigger Supabase Google OAuth Sign-in
  */
@@ -93,10 +123,11 @@ export async function signInWithGoogle(): Promise<{ error: Error | null }> {
   }
 
   try {
+    const redirectUrl = getAuthRedirectUrl();
     const { error } = await client.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: redirectUrl,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',

@@ -388,9 +388,23 @@ language plpgsql
 security definer set search_path = public
 as $$
 declare
+  caller_email text;
   clean_name text;
   updated_row public.profiles%rowtype;
 begin
+  -- Retrieve email of current authenticated caller
+  select email into caller_email
+  from auth.users
+  where id = auth.uid();
+
+  -- Authorize only root administrator methnidumanuth@gmail.com (or service role where auth.uid() is null)
+  if auth.uid() is not null and (caller_email is null or lower(trim(caller_email)) != 'methnidumanuth@gmail.com') then
+    return jsonb_build_object(
+      'success', false,
+      'message', 'Unauthorized: Root administration is strictly restricted to methnidumanuth@gmail.com.'
+    );
+  end if;
+
   clean_name := replace(target_username, '@', '');
 
   update public.profiles

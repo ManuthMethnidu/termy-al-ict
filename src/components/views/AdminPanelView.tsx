@@ -8,6 +8,7 @@ import {
 } from '../../lib/supabase';
 import { sounds } from '../../lib/sound';
 import { UserStats } from '../../types';
+import { isUserAdmin, ADMIN_EMAIL } from '../../lib/auth';
 
 interface AdminPanelProps {
   onExit: () => void;
@@ -33,7 +34,9 @@ export const AdminPanelView: React.FC<AdminPanelProps> = ({
     return false;
   });
 
-  const [inputUser, setInputUser] = useState<string>('');
+  const [inputUser, setInputUser] = useState<string>(
+    () => currentUser?.email || ADMIN_USER
+  );
   const [inputPass, setInputPass] = useState<string>('');
   const [authError, setAuthError] = useState<string>('');
   const [activeSubTab, setActiveSubTab] = useState<
@@ -92,7 +95,12 @@ export const AdminPanelView: React.FC<AdminPanelProps> = ({
   // Handle Login
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputUser.trim() === ADMIN_USER && inputPass === ADMIN_PASS) {
+    const cleanUser = inputUser.trim().toLowerCase();
+    const isValidUser =
+      cleanUser === ADMIN_USER.toLowerCase() ||
+      cleanUser === ADMIN_EMAIL.toLowerCase();
+
+    if (isValidUser && inputPass === ADMIN_PASS) {
       sounds.playFanfare();
       sessionStorage.setItem(SESSION_KEY, 'authenticated');
       setIsAuthenticated(true);
@@ -412,6 +420,40 @@ export const AdminPanelView: React.FC<AdminPanelProps> = ({
     return true;
   });
 
+  // Guard: If not signed in as authorized administrator, block access completely
+  if (!isUserAdmin(currentUser?.email)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] w-full max-w-md mx-auto p-4 select-none">
+        <div className="w-full bg-card-dark border-2 border-crimson-heart/40 rounded-3xl p-8 shadow-2xl flex flex-col gap-6 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-crimson-heart/10 border-2 border-crimson-heart/40 mx-auto flex items-center justify-center text-crimson-heart shadow-[0_0_15px_rgba(255,75,75,0.2)]">
+            <span className="material-symbols-outlined text-3xl font-bold">lock</span>
+          </div>
+          <div>
+            <h1 className="text-xl font-extrabold text-on-surface">Restricted Terminal</h1>
+            <p className="text-xs text-text-muted mt-2 leading-relaxed">
+              Only verified administrator accounts (<span className="text-primary font-mono">{ADMIN_EMAIL}</span>) can access this terminal.
+              {currentUser?.email ? (
+                <span className="block mt-2 font-mono text-[11px] text-text-muted">
+                  Signed in as: <strong className="text-on-surface">{currentUser.email}</strong>
+                </span>
+              ) : (
+                <span className="block mt-2 font-mono text-[11px] text-text-muted">
+                  You are currently browsing as Guest.
+                </span>
+              )}
+            </p>
+          </div>
+          <button
+            onClick={onExit}
+            className="w-full py-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold border border-card-border"
+          >
+            ← Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // If not authenticated, render Admin Gate Screen
   if (!isAuthenticated) {
     return (
@@ -428,8 +470,12 @@ export const AdminPanelView: React.FC<AdminPanelProps> = ({
             <h1 className="text-2xl font-extrabold text-on-surface mt-2 tracking-wide">
               Root Admin Terminal
             </h1>
-            <p className="text-xs text-text-muted">
-              Restricted control center for Termy A/L ICT. Unauthorized access is monitored.
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-primary text-[11px] font-mono font-bold mt-1">
+              <span className="w-2 h-2 rounded-full bg-primary shrink-0 animate-pulse" />
+              <span>Verified Admin: {currentUser?.email || ADMIN_EMAIL}</span>
+            </div>
+            <p className="text-xs text-text-muted mt-1">
+              Enter root administrator password to unlock console telemetry and candidate records.
             </p>
           </div>
 

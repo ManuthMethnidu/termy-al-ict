@@ -24,6 +24,7 @@ import {
   onAuthStateChange,
   fetchUserProfile,
   handleAuthCallback,
+  isUserAdmin,
 } from './lib/auth';
 import { sounds } from './lib/sound';
 
@@ -400,11 +401,48 @@ export const App: React.FC = () => {
           )}
 
           {activeTab === 'admin' && (
-            <AdminPanelView
-              onExit={() => handleSelectTab('learn')}
-              currentUser={userStats}
-              onUpdateStats={handleUpdateStats}
-            />
+            isUserAdmin(userStats.email) ? (
+              <AdminPanelView
+                onExit={() => handleSelectTab('learn')}
+                currentUser={userStats}
+                onUpdateStats={handleUpdateStats}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] max-w-md mx-auto p-6 text-center select-none">
+                <div className="w-16 h-16 rounded-2xl bg-crimson-heart/10 border-2 border-crimson-heart/30 flex items-center justify-center text-crimson-heart mb-4 shadow-[0_0_15px_rgba(255,75,75,0.2)]">
+                  <span className="material-symbols-outlined text-3xl font-bold">gpp_bad</span>
+                </div>
+                <h2 className="text-xl font-extrabold text-on-surface mb-2">Access Denied (403)</h2>
+                <p className="text-xs text-text-muted mb-6 leading-relaxed">
+                  The Root Administration Console is strictly restricted to system administrators (<span className="text-primary font-mono">methnidumanuth@gmail.com</span>).
+                  {userStats.email ? (
+                    <span className="block mt-2 font-mono text-[11px] text-text-muted">
+                      Currently signed in as: <strong className="text-on-surface">{userStats.email}</strong>
+                    </span>
+                  ) : (
+                    <span className="block mt-2 font-mono text-[11px] text-text-muted">
+                      You are currently browsing as Guest.
+                    </span>
+                  )}
+                </p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleSelectTab('learn')}
+                    className="px-5 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold border border-card-border transition-all"
+                  >
+                    Return to Dashboard
+                  </button>
+                  {!userStats.email && (
+                    <button
+                      onClick={() => handleOpenAuth('signin')}
+                      className="px-5 py-2.5 rounded-xl bg-primary text-on-primary-fixed font-extrabold text-xs uppercase tracking-wider shadow-md hover:brightness-110 transition-all"
+                    >
+                      Admin Sign In
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
           )}
         </main>
       </div>
