@@ -110,6 +110,94 @@ export async function signInWithGoogle(): Promise<{ error: Error | null }> {
 }
 
 /**
+ * Sign up with Email and Password
+ */
+export async function signUpWithEmail(
+  email: string,
+  password: string,
+  fullName?: string
+): Promise<{ user: User | null; session: Session | null; error: Error | null; emailConfirmationRequired: boolean }> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return {
+      user: null,
+      session: null,
+      error: new Error(
+        'Supabase is not configured. Please check your Supabase URL & Anon key in Settings.'
+      ),
+      emailConfirmationRequired: false,
+    };
+  }
+
+  try {
+    const trimmedEmail = email.trim();
+    const candidateName = fullName?.trim() || trimmedEmail.split('@')[0] || 'Candidate';
+    const { data, error } = await client.auth.signUp({
+      email: trimmedEmail,
+      password,
+      options: {
+        data: {
+          full_name: candidateName,
+          name: candidateName,
+        },
+      },
+    });
+
+    if (error) {
+      return { user: null, session: null, error, emailConfirmationRequired: false };
+    }
+
+    const emailConfirmationRequired = !data.session && !!data.user;
+    return {
+      user: data.user,
+      session: data.session,
+      error: null,
+      emailConfirmationRequired,
+    };
+  } catch (err: any) {
+    return { user: null, session: null, error: err, emailConfirmationRequired: false };
+  }
+}
+
+/**
+ * Sign in with Email and Password
+ */
+export async function signInWithEmail(
+  email: string,
+  password: string
+): Promise<{ user: User | null; session: Session | null; error: Error | null }> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return {
+      user: null,
+      session: null,
+      error: new Error(
+        'Supabase is not configured. Please check your Supabase URL & Anon key in Settings.'
+      ),
+    };
+  }
+
+  try {
+    const { data, error } = await client.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (error) {
+      return { user: null, session: null, error };
+    }
+
+    return {
+      user: data.user,
+      session: data.session,
+      error: null,
+    };
+  } catch (err: any) {
+    return { user: null, session: null, error: err };
+  }
+}
+
+/**
  * Sign out of Supabase session
  */
 export async function signOut(): Promise<{ error: Error | null }> {
@@ -184,7 +272,7 @@ export async function fetchUserProfile(userId: string): Promise<Partial<UserStat
       hearts: data.hearts || 5,
       isPro: data.is_pro || false,
       targetExamYear: data.target_exam_year || 2025,
-      authProvider: 'google',
+      authProvider: data.avatar_url?.includes('google') ? 'google' : 'email',
     };
   } catch (err) {
     console.warn('Error fetching user profile:', err);

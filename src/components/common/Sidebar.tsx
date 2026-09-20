@@ -180,12 +180,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span className="text-sm font-bold text-on-surface truncate leading-tight">
                   {userStats.name}
                 </span>
-                {userStats.authProvider === 'google' && (
-                  <span className="w-2 h-2 rounded-full bg-primary shrink-0" title="Google Verified Account" />
+                {(userStats.authProvider === 'google' || userStats.authProvider === 'email') && (
+                  <span className="w-2 h-2 rounded-full bg-primary shrink-0" title="Verified Account" />
                 )}
               </div>
               <span className="text-[11px] text-text-muted truncate">
-                {userStats.authProvider === 'google' ? 'Google Account' : userStats.batch}
+                {userStats.authProvider === 'google'
+                  ? 'Google Account'
+                  : userStats.authProvider === 'email'
+                  ? 'Verified Account'
+                  : userStats.batch}
               </span>
             </div>
           </div>

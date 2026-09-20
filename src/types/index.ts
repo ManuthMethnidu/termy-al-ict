@@ -53,7 +53,7 @@ export interface UserStats {
   id?: string;
   email?: string;
   avatarUrl?: string;
-  authProvider?: 'google' | 'guest';
+  authProvider?: 'google' | 'email' | 'guest';
   name: string;
   username: string;
   batch: string;

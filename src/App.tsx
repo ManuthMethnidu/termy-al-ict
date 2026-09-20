@@ -15,6 +15,7 @@ import { PrivacyPolicyView } from './components/views/PrivacyPolicyView';
 import { TermsOfServiceView } from './components/views/TermsOfServiceView';
 import { GuidebookModal } from './components/views/GuidebookModal';
 import { HelpFaqModal } from './components/views/HelpFaqModal';
+import { AuthModal } from './components/views/AuthModal';
 import { LiveMcqDrill } from './components/drill/LiveMcqDrill';
 import { SYLLABUS_QUESTIONS } from './data/syllabusQuestions';
 import { getAllMasterQuestions } from './lib/questionBankLoader';
@@ -161,6 +162,14 @@ export const App: React.FC = () => {
   const [drillQuestions, setDrillQuestions] = useState<McqQuestion[]>(SYLLABUS_QUESTIONS);
   const [isGuidebookOpen, setIsGuidebookOpen] = useState<boolean>(false);
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
+  const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
+  const [authInitialMode, setAuthInitialMode] = useState<'signin' | 'signup'>('signin');
+
+  const handleOpenAuth = (mode: 'signin' | 'signup' = 'signin') => {
+    sounds.playClick();
+    setAuthInitialMode(mode);
+    setIsAuthOpen(true);
+  };
 
   // Sync tab with browser URL, back/forward buttons, and clean OAuth tokens or PKCE code
   useEffect(() => {
@@ -234,12 +243,13 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // Subscribe to Supabase Auth State (Google OAuth login / logout)
+  // Subscribe to Supabase Auth State (Google OAuth / Email login / logout)
   useEffect(() => {
     const { unsubscribe } = onAuthStateChange(async (_session, user) => {
       if (user) {
         const meta = user.user_metadata || {};
         const profile = await fetchUserProfile(user.id);
+        const provider = (user.app_metadata?.provider === 'google' || meta.avatar_url ? 'google' : 'email') as 'google' | 'email';
 
         if (profile) {
           setUserStats((prev) => ({
@@ -247,20 +257,20 @@ export const App: React.FC = () => {
             ...profile,
             id: user.id,
             email: user.email,
-            authProvider: 'google',
+            authProvider: provider,
           }));
         } else {
-          // Fresh Google sign-in
-          const googleName =
+          // Fresh candidate sign-in
+          const candidateName =
             meta.full_name || meta.name || user.email?.split('@')[0] || 'Candidate';
-          const googleAvatar = meta.avatar_url;
+          const candidateAvatar = meta.avatar_url;
           const newStats: Partial<UserStats> = {
             id: user.id,
             email: user.email,
-            name: googleName,
+            name: candidateName,
             username: `@${user.email?.split('@')[0] || 'candidate'}`,
-            avatarUrl: googleAvatar,
-            authProvider: 'google',
+            avatarUrl: candidateAvatar,
+            authProvider: provider,
           };
 
           setUserStats((prev) => {
@@ -319,6 +329,7 @@ export const App: React.FC = () => {
           activeTab={activeTab}
           onSelectTab={handleSelectTab}
           onStartPractice={handleStartLesson}
+          onOpenAuth={handleOpenAuth}
         />
 
         {/* Viewport Content */}
@@ -361,7 +372,7 @@ export const App: React.FC = () => {
           )}
 
           {activeTab === 'profile' && (
-            <ProfileView userStats={userStats} />
+            <ProfileView userStats={userStats} onOpenAuth={handleOpenAuth} />
           )}
 
           {(activeTab === 'more' || activeTab === 'settings') && (
@@ -371,6 +382,7 @@ export const App: React.FC = () => {
               onOpenHelp={() => setIsHelpOpen(true)}
               onOpenAdmin={() => handleSelectTab('admin')}
               onNavigate={handleSelectTab}
+              onOpenAuth={handleOpenAuth}
             />
           )}
 
@@ -412,6 +424,13 @@ export const App: React.FC = () => {
       <HelpFaqModal
         isOpen={isHelpOpen}
         onClose={() => setIsHelpOpen(false)}
+      />
+
+      {/* Authentication Modal (Sign In / Sign Up) */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        initialMode={authInitialMode}
+        onClose={() => setIsAuthOpen(false)}
       />
     </div>
   );

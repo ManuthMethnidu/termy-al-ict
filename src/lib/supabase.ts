@@ -11,10 +11,14 @@ export interface LocalAttempt {
   createdAt: string;
 }
 
+export const DEFAULT_SUPABASE_URL = 'https://lhzghbqjxkaexbcgpvev.supabase.co';
+export const DEFAULT_SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoemdoYnFqeGthZXhiY2dwdmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3Mzg3NzMsImV4cCI6MjEwNTMxNDc3M30.212Ahua9I7_sLwxt_TSigUfFx8k_cE77PR2kIGm0lI8';
+
 export function getSupabaseConfig(): {
   url: string;
   key: string;
-  source: 'localStorage' | 'env' | 'none';
+  source: 'localStorage' | 'env' | 'default' | 'none';
 } {
   if (typeof window !== 'undefined') {
     const customUrl = localStorage.getItem('termy_supabase_url');
@@ -29,6 +33,10 @@ export function getSupabaseConfig(): {
 
   if (envUrl && envKey && envUrl !== 'https://your-project.supabase.co') {
     return { url: envUrl, key: envKey, source: 'env' };
+  }
+
+  if (DEFAULT_SUPABASE_URL && DEFAULT_SUPABASE_ANON_KEY) {
+    return { url: DEFAULT_SUPABASE_URL, key: DEFAULT_SUPABASE_ANON_KEY, source: 'default' };
   }
 
   return { url: '', key: '', source: 'none' };
