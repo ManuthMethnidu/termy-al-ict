@@ -34,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'practice', label: 'Practice', icon: 'code', href: '/practice' },
     { id: 'leaderboards', label: 'Leaderboards', icon: 'military_tech', href: '/leaderboards' },
     { id: 'quests', label: 'Quests', icon: 'assignment', href: '/quests' },
+    { id: 'friends', label: 'Friends', icon: 'group', href: '/friends' },
     { id: 'shop', label: 'Shop', icon: 'shopping_bag', href: '/shop' },
     { id: 'profile', label: 'Profile', icon: 'badge', href: '/profile' },
   ];
@@ -45,8 +46,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-[#131f24] border-r-2 border-card-border z-40 hidden md:flex flex-col justify-between p-4 select-none">
-      <div className="flex flex-col gap-5 overflow-y-auto overflow-x-hidden pr-1 scrollbar-thin scrollbar-thumb-card-border">
+    <aside className="fixed left-0 top-0 h-screen w-60 bg-[#131f24] border-r-2 border-card-border z-40 hidden md:flex flex-col justify-between p-3 select-none">
+      <div className="flex flex-col gap-3 overflow-y-auto overflow-x-hidden no-scrollbar">
         {/* Brand Logo */}
         <a
           href="/"
@@ -54,23 +55,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
             e.preventDefault();
             onSelectTab('learn');
           }}
-          className="flex items-center gap-3 px-2 py-1 cursor-pointer group shrink-0"
+          className="flex items-center gap-2.5 px-2 py-1 cursor-pointer group shrink-0"
         >
-          <div className="w-10 h-10 rounded-xl bg-card-dark border-2 border-card-border flex items-center justify-center text-primary group-hover:scale-105 transition-transform shadow-md">
-            <span className="material-symbols-outlined text-2xl font-bold">terminal</span>
+          <div className="w-8 h-8 rounded-lg bg-card-dark border-2 border-card-border flex items-center justify-center text-primary group-hover:scale-105 transition-transform shadow-sm">
+            <span className="material-symbols-outlined text-xl font-bold">terminal</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-extrabold text-2xl tracking-wider text-primary leading-none">
+            <span className="font-extrabold text-xl tracking-wider text-primary leading-none">
               TERMY
             </span>
-            <span className="text-[10px] font-mono text-text-muted tracking-widest uppercase">
+            <span className="text-[9px] font-mono text-text-muted tracking-widest uppercase">
               A/L ICT ENGINE
             </span>
           </div>
         </a>
 
         {/* Primary Navigation links */}
-        <nav className="flex flex-col gap-1.5">
+        <nav className="flex flex-col gap-1">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -81,20 +82,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   e.preventDefault();
                   onSelectTab(item.id);
                 }}
-                className={`flex items-center gap-4 px-4 py-3 uppercase tracking-wider text-sm font-extrabold transition-all rounded-xl text-left ${
+                className={`flex items-center gap-3 px-3 py-2 uppercase tracking-wider text-xs font-black transition-all rounded-xl text-left ${
                   isActive
-                    ? 'border-2 border-primary bg-surface-container text-primary shadow-[0_3px_0_#46a302]'
+                    ? 'border-2 border-primary bg-surface-container text-primary shadow-[0_2.5px_0_#46a302]'
                     : 'text-text-muted hover:bg-surface-container-high hover:text-on-surface'
                 }`}
               >
-                <span className="material-symbols-outlined text-2xl">{item.icon}</span>
-                <span>{item.label}</span>
+                <span className="material-symbols-outlined text-xl shrink-0">{item.icon}</span>
+                <span className="truncate">{item.label}</span>
               </a>
             );
           })}
 
-          {/* New "More" Option with Settings, Privacy & Terms inside */}
-          <div className="flex flex-col gap-1 mt-1">
+          {/* "More" Option with Settings, Privacy & Terms inside */}
+          <div className="flex flex-col gap-0.5 mt-0.5">
             <button
               onClick={() => {
                 if (!isMoreOpen) {
@@ -106,18 +107,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   setIsMoreOpen(!isMoreOpen);
                 }
               }}
-              className={`flex items-center justify-between px-4 py-3 uppercase tracking-wider text-sm font-extrabold transition-all rounded-xl text-left ${
+              className={`flex items-center justify-between px-3 py-2 uppercase tracking-wider text-xs font-black transition-all rounded-xl text-left ${
                 isMoreFamily
-                  ? 'border-2 border-primary bg-surface-container text-primary shadow-[0_3px_0_#46a302]'
+                  ? 'border-2 border-primary bg-surface-container text-primary shadow-[0_2.5px_0_#46a302]'
                   : 'text-text-muted hover:bg-surface-container-high hover:text-on-surface'
               }`}
             >
-              <div className="flex items-center gap-4">
-                <span className="material-symbols-outlined text-2xl">more_horiz</span>
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-xl shrink-0">more_horiz</span>
                 <span>More</span>
               </div>
               <span
-                className={`material-symbols-outlined text-xl transition-transform duration-200 ${
+                className={`material-symbols-outlined text-lg transition-transform duration-200 ${
                   isMoreOpen ? 'rotate-180 text-primary' : 'text-text-muted'
                 }`}
               >
@@ -127,7 +128,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Sub-menu: Settings, Privacy Policy, Terms of Service */}
             {isMoreOpen && (
-              <div className="flex flex-col gap-1 pl-3 pr-1 py-1.5 border-l-2 border-card-border ml-5 my-0.5 animate-in fade-in slide-in-from-top-1 duration-150">
+              <div className="flex flex-col gap-0.5 pl-2.5 pr-1 py-1 border-l-2 border-card-border ml-4 my-0.5 animate-in fade-in slide-in-from-top-1 duration-150">
                 {moreSubItems.map((sub) => {
                   const isSubActive =
                     activeTab === sub.id ||
@@ -141,13 +142,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         e.preventDefault();
                         onSelectTab(sub.id);
                       }}
-                      className={`flex items-center gap-3 px-3 py-2 text-xs font-bold rounded-lg text-left transition-all ${
+                      className={`flex items-center gap-2.5 px-2.5 py-1.5 text-[11px] font-bold rounded-lg text-left transition-all ${
                         isSubActive
-                          ? 'bg-primary/20 text-primary font-extrabold border border-primary/40 shadow-sm'
+                          ? 'bg-primary/20 text-primary font-black border border-primary/40 shadow-sm'
                           : 'text-text-muted hover:bg-surface-container hover:text-on-surface'
                       }`}
                     >
-                      <span className="material-symbols-outlined text-lg">{sub.icon}</span>
+                      <span className="material-symbols-outlined text-base">{sub.icon}</span>
                       <span className="truncate">{sub.label}</span>
                     </a>
                   );
@@ -159,33 +160,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Footer Area: Candidate Account info + Quick Legal Links */}
-      <div className="flex flex-col gap-2 pt-2 border-t-2 border-card-border shrink-0">
+      <div className="flex flex-col gap-1.5 pt-2 border-t-2 border-card-border shrink-0">
         <div
           onClick={() => onSelectTab('profile')}
-          className="flex items-center justify-between cursor-pointer hover:bg-surface-container-low/60 rounded-xl transition-colors p-2"
+          className="flex items-center justify-between cursor-pointer hover:bg-surface-container-low/60 rounded-xl transition-colors p-1.5"
         >
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2.5 min-w-0">
             {userStats.avatarUrl ? (
               <img
                 src={userStats.avatarUrl}
                 alt={userStats.name}
-                className="w-9 h-9 rounded-full object-cover ring-2 ring-primary/50 shadow shrink-0"
+                className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/50 shadow shrink-0"
               />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold shadow shrink-0">
-                <span className="material-symbols-outlined text-xl">person</span>
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold shadow shrink-0">
+                <span className="material-symbols-outlined text-lg">person</span>
               </div>
             )}
             <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-bold text-on-surface truncate leading-tight">
+              <div className="flex items-center gap-1">
+                <span className="text-xs font-bold text-on-surface truncate leading-tight">
                   {userStats.name}
                 </span>
                 {(userStats.authProvider === 'google' || userStats.authProvider === 'email') && (
-                  <span className="w-2 h-2 rounded-full bg-primary shrink-0" title="Verified Account" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" title="Verified Account" />
                 )}
               </div>
-              <span className="text-[11px] text-text-muted truncate">
+              <span className="text-[10px] text-text-muted truncate">
                 {userStats.authProvider === 'google'
                   ? 'Google Account'
                   : userStats.authProvider === 'email'
@@ -194,7 +195,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-0.5 shrink-0">
             {isUserAdmin(userStats.email) && (
               <button
                 onClick={(e) => {
@@ -204,7 +205,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 title="Root Admin Terminal"
                 className="text-text-muted hover:text-primary p-1 transition-colors"
               >
-                <span className="material-symbols-outlined text-lg">shield</span>
+                <span className="material-symbols-outlined text-base">shield</span>
               </button>
             )}
             <button
@@ -215,7 +216,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               title="Preferences & Settings"
               className="text-text-muted hover:text-on-surface p-1 transition-colors"
             >
-              <span className="material-symbols-outlined text-lg">settings</span>
+              <span className="material-symbols-outlined text-base">settings</span>
             </button>
           </div>
         </div>

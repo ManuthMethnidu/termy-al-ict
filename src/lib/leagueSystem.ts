@@ -61,7 +61,7 @@ export const LEAGUES: LeagueDefinition[] = [
     name: 'Gold',
     order: 3,
     tierLabel: 'Tier III',
-    icon: 'stars',
+    icon: 'workspace_premium',
     color: '#FFD700',
     gradient: 'from-[#2c240a] to-[#181404]',
     badgeBg: 'bg-yellow-500/20',
@@ -95,7 +95,7 @@ export const LEAGUES: LeagueDefinition[] = [
     name: 'Ruby',
     order: 5,
     tierLabel: 'Tier V',
-    icon: 'token',
+    icon: 'diamond',
     color: '#E11D48',
     gradient: 'from-[#330c18] to-[#1b050b]',
     badgeBg: 'bg-rose-600/20',
@@ -112,7 +112,7 @@ export const LEAGUES: LeagueDefinition[] = [
     name: 'Emerald',
     order: 6,
     tierLabel: 'Tier VI',
-    icon: 'shield_with_heart',
+    icon: 'verified',
     color: '#10B981',
     gradient: 'from-[#092b1d] to-[#04150e]',
     badgeBg: 'bg-emerald-600/20',
@@ -180,7 +180,7 @@ export const LEAGUES: LeagueDefinition[] = [
     name: 'Diamond',
     order: 10,
     tierLabel: 'Tier X',
-    icon: 'diamond',
+    icon: 'trophy',
     color: '#38BDF8',
     gradient: 'from-[#0e2c38] to-[#05131a]',
     badgeBg: 'bg-cyan-500/20',
@@ -270,99 +270,42 @@ export function getTimeUntilWeeklyReset(): {
 }
 
 /**
- * Realistic Sri Lankan A/L ICT candidate names and schools to populate competitive cohorts
- */
-const SRI_LANKAN_COHORT_NAMES = [
-  { name: 'Kavindu Senanayake', school: 'Royal College • Colombo 07' },
-  { name: 'Nethmi Fernando', school: 'Visakha Vidyalaya • Colombo 05' },
-  { name: 'Dinuka Jayasuriya', school: 'Ananda College • Colombo 10' },
-  { name: 'Sachini Bandara', school: 'Devi Balika Vidyalaya • Colombo 08' },
-  { name: 'Tharindu Perera', school: 'Dharmaraja College • Kandy' },
-  { name: 'Chamari Gunasekara', school: 'Mahamaya Girls College • Kandy' },
-  { name: 'Kaveen Weerasinghe', school: 'Richmond College • Galle' },
-  { name: 'Dilshan Silva', school: 'Mahinda College • Galle' },
-  { name: 'Sinthujan Sivarasa', school: 'Jaffna Central College • Jaffna' },
-  { name: 'Keerthika Rajendran', school: 'Vembadi Girls High School • Jaffna' },
-  { name: 'Gayan Wickramasinghe', school: 'Maliyadeva College • Kurunegala' },
-  { name: 'Anuki Dissanayake', school: 'Holy Family Convent • Kurunegala' },
-  { name: 'Prageeth Fonseka', school: 'St. Joseph’s College • Colombo 10' },
-  { name: 'Sanuka Mendis', school: 'St. Peter’s College • Colombo 04' },
-  { name: 'Nisali Alahakoon', school: 'Sirimavo Bandaranaike Vidyalaya' },
-  { name: 'Buddhika Rathnayake', school: 'Kingswood College • Kandy' },
-  { name: 'Yohan Rajapakse', school: 'Trinity College • Kandy' },
-  { name: 'Thejan Liyanage', school: 'St. Thomas’ College • Mt. Lavinia' },
-  { name: 'Hasini Jayawardena', school: 'Musaeus College • Colombo 07' },
-  { name: 'Akila Somaratne', school: 'Rahula College • Matara' },
-  { name: 'Hiruni Senaratne', school: 'Sujatha Vidyalaya • Matara' },
-  { name: 'Navin Pathirana', school: 'Nalanda College • Colombo 10' },
-  { name: 'Praveen Karunaratne', school: 'Thurstan College • Colombo 07' },
-  { name: 'Danushka Ekanayake', school: 'Bandaranayake College • Gampaha' },
-  { name: 'Subashini Vigneswaran', school: 'Hartley College • Point Pedro' },
-  { name: 'Isuru Abeysinghe', school: 'Badulla Central College • Badulla' },
-  { name: 'Ashan Rodrigo', school: 'Maris Stella College • Negombo' },
-  { name: 'Chathurika Madushani', school: 'Rathnavali Balika • Gampaha' },
-  { name: 'Vihanga Nanayakkara', school: 'Taxila Central College • Horana' },
-];
-
-/**
- * Generate or retrieve the 30-member division group for the user's league.
- * Places the current candidate at their exact dynamic rank based on weeklyXp.
+ * Assemble division group for the user's league using real registered candidates.
+ * Places candidates at their exact dynamic rank based on weekly XP.
  */
 export function generateLeagueCohort(
-  leagueId: number,
-  groupNumber: number,
+  _leagueId: number,
+  _groupNumber: number,
   currentUser: UserStats,
   realProfiles: any[] = []
 ): LeaderboardEntry[] {
-  const league = getLeagueById(leagueId);
-  const currentWeek = getCurrentWeekId();
-  const userWeeklyXp = currentUser.weeklyXp ?? currentUser.xp;
+  const userWeeklyXp = currentUser.weeklyXp ?? currentUser.xp ?? 0;
 
-  // Use seed based on week and group number for deterministic simulation of peers
-  const weekSeed = currentWeek.split('-W')[1] ? parseInt(currentWeek.split('-W')[1], 10) : 38;
-  const [minXp, maxXp] = league.baseXpRange;
-
-  // Map real profiles from Supabase first
+  // Map real registered profiles from Supabase
   const realEntries: LeaderboardEntry[] = realProfiles
-    .filter((p) => p.id !== currentUser.id && p.username !== currentUser.username)
+    .filter(
+      (p) =>
+        p.id !== currentUser.id &&
+        p.username !== currentUser.username.replace('@', '')
+    )
     .map((p, idx) => ({
       rank: 0,
       id: p.id,
       name: p.display_name || p.username || 'Candidate',
-      username: p.username ? (p.username.startsWith('@') ? p.username : `@${p.username}`) : `@user_${idx}`,
+      username: p.username
+        ? p.username.startsWith('@')
+          ? p.username
+          : `@${p.username}`
+        : `@user_${idx}`,
       avatarUrl: p.avatar_url,
       school: p.school || 'Physical Science & ICT Stream',
       level: `L${Math.max(1, Math.floor((p.xp || 0) / 400) + 1)}`,
-      streak: p.streak_days || 1,
-      xp: p.weekly_xp ?? Math.min(maxXp, Math.max(minXp, Math.floor(p.xp * 0.4))),
+      streak: p.streak_days || 0,
+      xp: p.weekly_xp ?? p.xp ?? 0,
       isCurrentUser: false,
     }));
 
-  // Build the remaining group members up to 29 peers (so + current user = 30 learners)
-  const peerEntries: LeaderboardEntry[] = [];
-  const neededPeers = Math.max(0, 29 - realEntries.length);
-
-  for (let i = 0; i < neededPeers; i++) {
-    const peerMeta = SRI_LANKAN_COHORT_NAMES[(i + groupNumber * 3 + weekSeed) % SRI_LANKAN_COHORT_NAMES.length];
-    // Create realistic downward curve of weekly XP in this league
-    const curvePct = 1 - Math.pow(i / Math.max(1, neededPeers), 0.75);
-    const jitter = Math.sin(i * 13 + weekSeed + groupNumber) * 35;
-    const peerXp = Math.max(0, Math.round(minXp + (maxXp - minXp) * curvePct + jitter));
-
-    peerEntries.push({
-      rank: 0,
-      id: `peer_${leagueId}_${groupNumber}_${i}`,
-      name: peerMeta.name,
-      username: `@${peerMeta.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
-      school: peerMeta.school,
-      level: `L${Math.max(1, Math.floor(peerXp / 300) + 1)}`,
-      streak: (i % 8) + 1,
-      xp: peerXp,
-      isCurrentUser: false,
-    });
-  }
-
-  // Combine real candidates + simulated peers + current user
+  // Current user entry
   const currentUserEntry: LeaderboardEntry = {
     rank: 0,
     id: currentUser.id || 'local_user',
@@ -371,18 +314,18 @@ export function generateLeagueCohort(
     avatarUrl: currentUser.avatarUrl,
     school: currentUser.school,
     level: `L${currentUser.level || 1}`,
-    streak: currentUser.streakDays,
+    streak: currentUser.streakDays || 0,
     xp: userWeeklyXp,
     isCurrentUser: true,
   };
 
-  const all30 = [...realEntries, ...peerEntries, currentUserEntry];
+  const allEntries = [...realEntries, currentUserEntry];
 
-  // Sort descending by weekly XP
-  all30.sort((a, b) => b.xp - a.xp);
+  // Sort descending by weekly XP (or total XP if equal)
+  allEntries.sort((a, b) => b.xp - a.xp);
 
-  // Assign ranks 1 to 30
-  return all30.slice(0, 30).map((entry, index) => ({
+  // Assign ranks 1, 2, 3...
+  return allEntries.map((entry, index) => ({
     ...entry,
     rank: index + 1,
   }));

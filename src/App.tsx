@@ -7,6 +7,7 @@ import { QuestionBankView } from './components/views/QuestionBankView';
 import { PracticeHubView } from './components/views/PracticeHubView';
 import { LeaderboardsView } from './components/views/LeaderboardsView';
 import { QuestsView } from './components/views/QuestsView';
+import { FriendsView } from './components/views/FriendsView';
 import { ShopView } from './components/views/ShopView';
 import { ProfileView } from './components/views/ProfileView';
 import { SettingsView } from './components/views/SettingsView';
@@ -114,6 +115,10 @@ function getTabFromLocation(): NavTab {
     return 'quests';
   }
 
+  if (path === '/friends' || hash === 'friends' || tabParam === 'friends') {
+    return 'friends';
+  }
+
   if (path === '/shop' || hash === 'shop') {
     return 'shop';
   }
@@ -144,6 +149,8 @@ function getUrlForTab(tab: NavTab): string {
       return '/leaderboards';
     case 'quests':
       return '/quests';
+    case 'friends':
+      return '/friends';
     case 'shop':
       return '/shop';
     case 'profile':
@@ -214,6 +221,8 @@ export const App: React.FC = () => {
       document.title = 'National Leaderboards — Termy A/L ICT';
     } else if (activeTab === 'quests') {
       document.title = 'Daily Quests — Termy A/L ICT';
+    } else if (activeTab === 'friends') {
+      document.title = 'Friends & Community — Termy A/L ICT';
     } else if (activeTab === 'shop') {
       document.title = 'Termy Shop — Bits & Lives';
     } else if (activeTab === 'profile') {
@@ -400,6 +409,15 @@ export const App: React.FC = () => {
             <QuestsView
               userStats={userStats}
               onUpdateStats={handleUpdateStats}
+              onStartDrill={handleStartLesson}
+            />
+          )}
+
+          {activeTab === 'friends' && (
+            <FriendsView
+              userStats={userStats}
+              onUpdateStats={handleUpdateStats}
+              onOpenAuth={handleOpenAuth}
               onStartDrill={handleStartLesson}
             />
           )}

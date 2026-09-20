@@ -4,6 +4,7 @@ export type NavTab =
   | 'practice'
   | 'leaderboards'
   | 'quests'
+  | 'friends'
   | 'shop'
   | 'profile'
   | 'more'

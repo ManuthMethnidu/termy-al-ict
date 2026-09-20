@@ -7,113 +7,8 @@ const BLOCKED_STORAGE_KEY = 'termy_blocked_users_v1';
 const STREAKS_STORAGE_KEY = 'termy_friend_streaks_v1';
 const FEED_STORAGE_KEY = 'termy_social_feed_v1';
 
-// Seed directory of active Sri Lankan A/L ICT Candidates
-export const SEED_CANDIDATES: FriendUser[] = [
-  {
-    id: 'a1111111-1111-4111-a111-111111111111',
-    name: 'Kavindu Senanayake',
-    username: '@kavindu_royal',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    school: 'Royal College • Colombo 07',
-    streakDays: 48,
-    xp: 2840,
-    weeklyXp: 720,
-    leagueId: 10,
-    leagueName: 'Diamond League',
-    isFollowing: true,
-    isFollower: true,
-    isMutual: true,
-    hasFriendStreak: true,
-    friendStreakDays: 14,
-    completedLessonToday: true,
-  },
-  {
-    id: 'a2222222-2222-4222-a222-222222222222',
-    name: 'Hansi Perera',
-    username: '@hansi_visakha',
-    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    school: 'Visakha Vidyalaya • Colombo 04',
-    streakDays: 35,
-    xp: 2190,
-    weeklyXp: 540,
-    leagueId: 9,
-    leagueName: 'Obsidian League',
-    isFollowing: true,
-    isFollower: true,
-    isMutual: true,
-    hasFriendStreak: true,
-    friendStreakDays: 7,
-    completedLessonToday: true,
-  },
-  {
-    id: 'a3333333-3333-4333-a333-333333333333',
-    name: 'Dineth Jayasuriya',
-    username: '@dineth_ananda',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    school: 'Ananda College • Colombo 10',
-    streakDays: 22,
-    xp: 1780,
-    weeklyXp: 410,
-    leagueId: 8,
-    leagueName: 'Pearl League',
-    isFollowing: false,
-    isFollower: true,
-    isMutual: false,
-    hasFriendStreak: false,
-    completedLessonToday: false,
-  },
-  {
-    id: 'a4444444-4444-4444-a444-444444444444',
-    name: 'Shenaya Fernando',
-    username: '@shenaya_mew',
-    avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-    school: 'Musaeus College • Colombo 07',
-    streakDays: 19,
-    xp: 1450,
-    weeklyXp: 380,
-    leagueId: 7,
-    leagueName: 'Amethyst League',
-    isFollowing: true,
-    isFollower: false,
-    isMutual: false,
-    hasFriendStreak: false,
-    completedLessonToday: true,
-  },
-  {
-    id: 'a5555555-5555-4555-a555-555555555555',
-    name: 'Tharindu Wickrama',
-    username: '@tharindu_mahinda',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-    school: 'Mahinda College • Galle',
-    streakDays: 14,
-    xp: 1210,
-    weeklyXp: 290,
-    leagueId: 6,
-    leagueName: 'Emerald League',
-    isFollowing: false,
-    isFollower: false,
-    isMutual: false,
-    hasFriendStreak: false,
-    completedLessonToday: false,
-  },
-  {
-    id: 'a6666666-6666-4666-a666-666666666666',
-    name: 'Nethmi Rathnayake',
-    username: '@nethmi_devi',
-    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-    school: 'Devi Balika Vidyalaya • Colombo 08',
-    streakDays: 11,
-    xp: 940,
-    weeklyXp: 260,
-    leagueId: 5,
-    leagueName: 'Ruby League',
-    isFollowing: false,
-    isFollower: false,
-    isMutual: false,
-    hasFriendStreak: false,
-    completedLessonToday: false,
-  },
-];
+// Seed directory of active Sri Lankan A/L ICT Candidates (Real users only)
+export const SEED_CANDIDATES: FriendUser[] = [];
 
 export interface FollowState {
   followingIds: string[];
@@ -125,10 +20,7 @@ export interface FollowState {
  */
 export function getLocalFollowState(): FollowState {
   if (typeof window === 'undefined') {
-    return {
-      followingIds: ['a1111111-1111-4111-a111-111111111111', 'a2222222-2222-4222-a222-222222222222', 'a4444444-4444-4444-a444-444444444444'],
-      followerIds: ['a1111111-1111-4111-a111-111111111111', 'a2222222-2222-4222-a222-222222222222', 'a3333333-3333-4333-a333-333333333333'],
-    };
+    return { followingIds: [], followerIds: [] };
   }
   try {
     const saved = localStorage.getItem(FOLLOWS_STORAGE_KEY);
@@ -136,11 +28,7 @@ export function getLocalFollowState(): FollowState {
   } catch (e) {
     console.warn('Failed to parse follow state', e);
   }
-  // Default sample network: following Kavindu, Hansi, Shenaya; followed by Kavindu, Hansi, Dineth
-  return {
-    followingIds: ['a1111111-1111-4111-a111-111111111111', 'a2222222-2222-4222-a222-222222222222', 'a4444444-4444-4444-a444-444444444444'],
-    followerIds: ['a1111111-1111-4111-a111-111111111111', 'a2222222-2222-4222-a222-222222222222', 'a3333333-3333-4333-a333-333333333333'],
-  };
+  return { followingIds: [], followerIds: [] };
 }
 
 export function saveLocalFollowState(state: FollowState) {
@@ -392,18 +280,8 @@ export async function getAllFriendsList(
     const isFollowing = followState.followingIds.includes(user.id);
     const isFollower = followState.followerIds.includes(user.id);
     const isMutual = isFollowing && isFollower;
-    const hasFriendStreak =
-      isMutual &&
-      (activeStreaksMap.has(user.id) ||
-        user.id === 'a1111111-1111-4111-a111-111111111111' ||
-        user.id === 'a2222222-2222-4222-a222-222222222222');
-    const friendStreakDays =
-      activeStreaksMap.get(user.id) ??
-      (user.id === 'a1111111-1111-4111-a111-111111111111'
-        ? 14
-        : user.id === 'a2222222-2222-4222-a222-222222222222'
-        ? 7
-        : 0);
+    const hasFriendStreak = isMutual && activeStreaksMap.has(user.id);
+    const friendStreakDays = activeStreaksMap.get(user.id) ?? 0;
 
     return {
       ...user,
@@ -452,7 +330,7 @@ export function generateInviteLink(username: string): string {
 /**
  * Friend Streaks: Up to 5 mutual friends
  */
-export function getFriendStreaks(currentUser: UserStats): FriendStreak[] {
+export function getFriendStreaks(_currentUser: UserStats): FriendStreak[] {
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem(STREAKS_STORAGE_KEY);
     if (saved) {
@@ -464,33 +342,7 @@ export function getFriendStreaks(currentUser: UserStats): FriendStreak[] {
     }
   }
 
-  // Default initial friend streaks with mutual study partners
-  const defaultStreaks: FriendStreak[] = [
-    {
-      id: 'fs_kavindu',
-      friendId: 'a1111111-1111-4111-a111-111111111111',
-      friendName: 'Kavindu Senanayake',
-      friendUsername: '@kavindu_royal',
-      friendAvatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      streakDays: 14,
-      userCompletedToday: (currentUser.streakDays || 0) > 0,
-      friendCompletedToday: true,
-      lastActiveDate: new Date().toISOString().split('T')[0],
-    },
-    {
-      id: 'fs_hansi',
-      friendId: 'a2222222-2222-4222-a222-222222222222',
-      friendName: 'Hansi Perera',
-      friendUsername: '@hansi_visakha',
-      friendAvatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-      streakDays: 7,
-      userCompletedToday: (currentUser.streakDays || 0) > 0,
-      friendCompletedToday: true,
-      lastActiveDate: new Date().toISOString().split('T')[0],
-    },
-  ];
-
-  return defaultStreaks;
+  return [];
 }
 
 export function saveFriendStreaks(streaks: FriendStreak[]): void {
@@ -639,63 +491,7 @@ export function getSocialFeed(): SocialActivity[] {
     }
   }
 
-  // Pre-populated realistic milestone activities from people you follow
-  const defaultFeed: SocialActivity[] = [
-    {
-      id: 'act_01',
-      userId: 'a1111111-1111-4111-a111-111111111111',
-      userName: 'Kavindu Senanayake',
-      userUsername: '@kavindu_royal',
-      userAvatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      activityType: 'league_promoted',
-      title: 'Promoted to Diamond League! 💎',
-      description: 'Finished in the top 3 of the national division with 2,840 XP this week.',
-      timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-      timeAgo: '2h ago',
-      reactions: { highFive: 6, congrats: 12, celebrate: 8, letsGo: 15 },
-    },
-    {
-      id: 'act_02',
-      userId: 'a2222222-2222-4222-a222-222222222222',
-      userName: 'Hansi Perera',
-      userUsername: '@hansi_visakha',
-      userAvatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-      activityType: 'streak_milestone',
-      title: 'Hit a 35-Day Study Streak! 🔥',
-      description: 'Studying A/L ICT every single day without breaking the chain.',
-      timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
-      timeAgo: '5h ago',
-      reactions: { highFive: 9, congrats: 14, celebrate: 5, letsGo: 11 },
-    },
-    {
-      id: 'act_03',
-      userId: 'a4444444-4444-4444-a444-444444444444',
-      userName: 'Shenaya Fernando',
-      userUsername: '@shenaya_mew',
-      userAvatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-      activityType: 'unit_mastered',
-      title: 'Mastered Unit 3: Digital Electronics! ⚡',
-      description: 'Completed 15 De Morgan & Karnaugh map drills with 100% accuracy.',
-      timestamp: new Date(Date.now() - 3600000 * 12).toISOString(),
-      timeAgo: '12h ago',
-      reactions: { highFive: 4, congrats: 7, celebrate: 10, letsGo: 6 },
-    },
-    {
-      id: 'act_04',
-      userId: 'a3333333-3333-4333-a333-333333333333',
-      userName: 'Dineth Jayasuriya',
-      userUsername: '@dineth_ananda',
-      userAvatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-      activityType: 'drill_perfect',
-      title: 'Scored 100% in 2024 Past Paper Drill! 🎯',
-      description: 'Flawless 10-question sprint through Python loops & SQL queries.',
-      timestamp: new Date(Date.now() - 3600000 * 20).toISOString(),
-      timeAgo: '20h ago',
-      reactions: { highFive: 5, congrats: 8, celebrate: 4, letsGo: 7 },
-    },
-  ];
-
-  return defaultFeed;
+  return [];
 }
 
 export function saveSocialFeed(feed: SocialActivity[]): void {
