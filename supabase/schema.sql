@@ -378,3 +378,43 @@ on conflict (id) do update set
   description = excluded.description,
   cost_gems = excluded.cost_gems,
   icon = excluded.icon;
+
+-- ----------------------------------------------------------
+-- 14. ADMIN RPC: Set candidate Pro subscription status by username
+-- ----------------------------------------------------------
+create or replace function public.admin_set_user_pro(target_username text, enable_pro boolean)
+returns jsonb
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  clean_name text;
+  updated_row public.profiles%rowtype;
+begin
+  clean_name := replace(target_username, '@', '');
+
+  update public.profiles
+  set
+    is_pro = enable_pro,
+    hearts = case when enable_pro then 999 else 5 end,
+    updated_at = timezone('utc'::text, now())
+  where username = clean_name
+     or username = '@' || clean_name
+     or username = target_username
+  returning * into updated_row;
+
+  if not found then
+    return jsonb_build_object(
+      'success', false,
+      'message', 'Candidate not found with username: ' || target_username
+    );
+  end if;
+
+  return jsonb_build_object(
+    'success', true,
+    'is_pro', updated_row.is_pro,
+    'username', updated_row.username,
+    'display_name', updated_row.display_name
+  );
+end;
+$$;

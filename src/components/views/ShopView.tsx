@@ -1,16 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { UserStats } from '../../types';
 import { sounds } from '../../lib/sound';
 
 interface ShopViewProps {
   userStats: UserStats;
   onUpdateStats: (newStats: Partial<UserStats>) => void;
+  onOpenAuth?: (mode?: 'signin' | 'signup') => void;
 }
 
 export const ShopView: React.FC<ShopViewProps> = ({
   userStats,
   onUpdateStats,
+  onOpenAuth,
 }) => {
+  const [copiedUsername, setCopiedUsername] = useState(false);
+
   const handleBuyHearts = () => {
     if (userStats.hearts >= userStats.maxHearts) {
       alert('Your exam lives are already full (5/5)!');
@@ -40,70 +44,231 @@ export const ShopView: React.FC<ShopViewProps> = ({
     alert('Streak Freeze equipped! Your study streak is protected for tomorrow.');
   };
 
-  const handleTogglePro = () => {
-    sounds.playFanfare();
-    const nextPro = !userStats.isPro;
-    onUpdateStats({
-      isPro: nextPro,
-      hearts: nextPro ? 999 : 5,
-    });
-    alert(nextPro ? 'Super Termy Pro Plan Activated! Unlimited hearts enabled.' : 'Switched back to standard plan.');
+  const handleCopyUsername = () => {
+    const textToCopy = userStats.username.startsWith('@')
+      ? userStats.username
+      : `@${userStats.username}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(textToCopy);
+      sounds.playClick();
+      setCopiedUsername(true);
+      setTimeout(() => setCopiedUsername(false), 2500);
+    }
   };
+
+  const isGuest = !userStats.email && userStats.authProvider === 'guest';
 
   return (
     <div className="flex flex-col w-full max-w-3xl mx-auto gap-8 pb-24 md:pb-12">
       {/* Super Termy Pro Hero Card */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#182a4d] via-[#1f2452] to-[#2b1b4d] p-6 sm:p-8 border border-card-border/60 shadow-xl">
-        <div className="absolute -right-6 -bottom-10 opacity-15 pointer-events-none">
-          <svg
-            className="text-secondary w-64 h-64"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              d="M9 3v2m6-2v2M9 19v2m6-2v2M3 9h2m-2 6h2m16-6h2m-2 6h2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.5"
-            />
-          </svg>
-        </div>
-
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="flex items-start gap-4 max-w-md">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#00a8ed] to-[#74e930] flex items-center justify-center shadow-md shrink-0">
-              <span
-                className="material-symbols-outlined text-surface-container-lowest text-4xl"
-                style={{ fontVariationSettings: '"FILL" 1' }}
-              >
-                terminal
-              </span>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] uppercase tracking-widest text-secondary font-extrabold bg-[#00a8ed]/20 px-2 py-0.5 rounded">
-                  PRO PASS
-                </span>
-                <span className="text-xs text-lightning-gold font-bold">
-                  ★ 7-DAY FREE TRIAL
+      {userStats.isPro ? (
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#182a4d] via-[#1b3438] to-[#1a3826] p-6 sm:p-8 border-2 border-primary/50 shadow-xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div className="flex items-start gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-primary/20 border-2 border-primary flex items-center justify-center text-primary shadow-lg shrink-0">
+                <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: '"FILL" 1' }}>
+                  workspace_premium
                 </span>
               </div>
-              <h2 className="text-2xl font-extrabold text-on-surface">Super Termy Pro Plan</h2>
-              <p className="text-xs text-secondary-fixed leading-relaxed">
-                Unlimited hearts, official marking scheme step-by-step breakdowns, and advanced algorithmic drills.
-              </p>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-widest text-primary font-extrabold bg-primary/20 border border-primary/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                    PRO ACTIVE
+                  </span>
+                  <span className="text-xs text-lightning-gold font-bold">★ UNLIMITED ACCESS</span>
+                </div>
+                <h2 className="text-2xl font-extrabold text-on-surface">Super Termy Pro Plan</h2>
+                <p className="text-xs text-text-muted leading-relaxed max-w-md">
+                  Your Pro account is fully active. You have unlimited exam lives, step-by-step marking scheme breakdowns, and Spaced Repetition boosters.
+                </p>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className="px-2.5 py-1 rounded-lg bg-surface-container/80 text-[11px] font-mono text-secondary border border-card-border">
+                    Username: {userStats.username}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg bg-crimson-heart/20 text-[11px] font-bold text-crimson-heart border border-crimson-heart/30">
+                    Exam Lives: Unlimited (∞)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <a
+              href="https://t.me/ManuthMethnidu"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2.5 rounded-xl bg-surface-container hover:bg-surface-variant text-text-muted hover:text-on-surface text-xs font-bold border border-card-border flex items-center gap-2 transition-colors shrink-0 self-start sm:self-center"
+            >
+              <span className="material-symbols-outlined text-base">support_agent</span>
+              <span>Pro Support</span>
+            </a>
+          </div>
+        </div>
+      ) : (
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#121c2c] via-[#1a233a] to-[#251b38] p-6 sm:p-8 border-2 border-primary/40 shadow-2xl flex flex-col gap-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="flex items-start gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#00a8ed] to-[#74e930] flex items-center justify-center shadow-lg shrink-0">
+                <span className="material-symbols-outlined text-surface-container-lowest text-4xl" style={{ fontVariationSettings: '"FILL" 1' }}>
+                  terminal
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-widest text-secondary font-extrabold bg-[#00a8ed]/20 px-2 py-0.5 rounded">
+                    PRO PASS
+                  </span>
+                  <span className="text-xs text-lightning-gold font-bold">★ A/L ICT EXAM PACK</span>
+                </div>
+                <h2 className="text-2xl font-extrabold text-on-surface">Super Termy Pro Plan</h2>
+                <p className="text-xs text-text-muted leading-relaxed max-w-lg">
+                  Unlimited hearts, verified marking scheme derivations, and priority active recall drills for all 2,636 official syllabus questions.
+                </p>
+              </div>
+            </div>
+
+            <a
+              href="https://t.me/ManuthMethnidu"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full md:w-auto px-6 py-3.5 bg-[#0088cc] hover:bg-[#0077b5] text-white text-xs uppercase font-extrabold tracking-wider rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all shrink-0 active:translate-y-0.5"
+            >
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.77-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
+              </svg>
+              <span>Upgrade via Telegram</span>
+            </a>
+          </div>
+
+          {/* Pro Benefits Highlights */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-card-border/60">
+            <div className="p-3 rounded-xl bg-surface-container/60 border border-card-border flex flex-col gap-1">
+              <span className="text-crimson-heart font-bold text-sm flex items-center gap-1">
+                <span className="material-symbols-outlined text-base">favorite</span>
+                <span>Unlimited</span>
+              </span>
+              <span className="text-[11px] text-text-muted">Exam Lives / Hearts</span>
+            </div>
+            <div className="p-3 rounded-xl bg-surface-container/60 border border-card-border flex flex-col gap-1">
+              <span className="text-lightning-gold font-bold text-sm flex items-center gap-1">
+                <span className="material-symbols-outlined text-base">menu_book</span>
+                <span>2,636 MCQs</span>
+              </span>
+              <span className="text-[11px] text-text-muted">Full Marking Schemes</span>
+            </div>
+            <div className="p-3 rounded-xl bg-surface-container/60 border border-card-border flex flex-col gap-1">
+              <span className="text-secondary font-bold text-sm flex items-center gap-1">
+                <span className="material-symbols-outlined text-base">autorenew</span>
+                <span>SM-2 Turbo</span>
+              </span>
+              <span className="text-[11px] text-text-muted">Adaptive Active Recall</span>
+            </div>
+            <div className="p-3 rounded-xl bg-surface-container/60 border border-card-border flex flex-col gap-1">
+              <span className="text-primary font-bold text-sm flex items-center gap-1">
+                <span className="material-symbols-outlined text-base">bolt</span>
+                <span>2x XP Boost</span>
+              </span>
+              <span className="text-[11px] text-text-muted">Diamond League Climb</span>
             </div>
           </div>
 
-          <button
-            onClick={handleTogglePro}
-            className="w-full md:w-auto px-6 py-3 bg-on-surface text-surface-container-lowest text-xs uppercase font-extrabold tracking-wider rounded-xl shadow-[0_4px_0_#88957d] hover:brightness-105 active:translate-y-1 active:shadow-[0_1px_0_#88957d] transition-all shrink-0 text-center"
-          >
-            {userStats.isPro ? 'Pro Active (Toggle)' : 'Start Free 7-Day Pro'}
-          </button>
+          {/* Bank Payment Instructions Box */}
+          <div className="rounded-2xl bg-[#0b1317] border-2 border-secondary/40 p-5 flex flex-col gap-4">
+            <div className="flex items-center gap-2 text-secondary font-extrabold text-sm uppercase tracking-wider">
+              <span className="material-symbols-outlined text-lg">payments</span>
+              <span>How to Activate Super Termy Pro</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div className="p-3.5 rounded-xl bg-surface-container border border-card-border flex flex-col gap-1.5">
+                <div className="w-6 h-6 rounded-full bg-secondary/20 text-secondary font-extrabold flex items-center justify-center text-xs">
+                  1
+                </div>
+                <span className="font-bold text-on-surface">Ask for Bank Details</span>
+                <p className="text-text-muted text-[11px] leading-relaxed">
+                  Send a message to{' '}
+                  <a
+                    href="https://t.me/ManuthMethnidu"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-secondary font-bold hover:underline"
+                  >
+                    @ManuthMethnidu
+                  </a>{' '}
+                  on Telegram to request the official bank transfer details.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-surface-container border border-card-border flex flex-col gap-1.5">
+                <div className="w-6 h-6 rounded-full bg-secondary/20 text-secondary font-extrabold flex items-center justify-center text-xs">
+                  2
+                </div>
+                <span className="font-bold text-on-surface">Transfer & Send Slip</span>
+                <p className="text-text-muted text-[11px] leading-relaxed">
+                  Transfer the payment using online banking or CDM, and send a clear photo or PDF of the payment slip.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-surface-container border border-card-border flex flex-col gap-1.5">
+                <div className="w-6 h-6 rounded-full bg-secondary/20 text-secondary font-extrabold flex items-center justify-center text-xs">
+                  3
+                </div>
+                <span className="font-bold text-on-surface">Include Your Username</span>
+                <p className="text-text-muted text-[11px] leading-relaxed">
+                  Send your Termy username in the chat. The admin will verify your payment and activate your Pro Pass in the system!
+                </p>
+              </div>
+            </div>
+
+            {/* Candidate Username Copy Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-surface-container-high border border-card-border">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-xl">badge</span>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">
+                    Your Termy Username to Send:
+                  </span>
+                  <span className="font-mono font-bold text-primary text-sm">
+                    {userStats.username}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={handleCopyUsername}
+                  className="px-3.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-variant border border-card-border text-xs font-bold text-on-surface flex items-center gap-1.5 transition-colors shadow-sm"
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    {copiedUsername ? 'check' : 'content_copy'}
+                  </span>
+                  <span>{copiedUsername ? 'Copied!' : 'Copy Username'}</span>
+                </button>
+
+                {isGuest && onOpenAuth && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenAuth('signup')}
+                    className="px-3.5 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-on-primary-fixed text-xs font-extrabold transition-colors shadow-sm"
+                  >
+                    Sign In / Sign Up First
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {isGuest && (
+              <div className="text-[11px] text-lightning-gold flex items-center gap-1.5 px-1">
+                <span className="material-symbols-outlined text-sm shrink-0">info</span>
+                <span>
+                  You are currently in Guest mode. Please create an account or sign in before upgrading so your Pro subscription is linked permanently to your profile.
+                </span>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Hearts / Exam Lives Section */}
       <div className="flex flex-col gap-4">

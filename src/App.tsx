@@ -368,6 +368,7 @@ export const App: React.FC = () => {
             <ShopView
               userStats={userStats}
               onUpdateStats={handleUpdateStats}
+              onOpenAuth={handleOpenAuth}
             />
           )}
 
@@ -399,7 +400,11 @@ export const App: React.FC = () => {
           )}
 
           {activeTab === 'admin' && (
-            <AdminPanelView onExit={() => handleSelectTab('learn')} />
+            <AdminPanelView
+              onExit={() => handleSelectTab('learn')}
+              currentUser={userStats}
+              onUpdateStats={handleUpdateStats}
+            />
           )}
         </main>
       </div>
