@@ -9,6 +9,9 @@ interface HeaderProps {
   onSelectTab: (tab: NavTab) => void;
   onStartPractice: () => void;
   onOpenAuth?: (mode?: 'signin' | 'signup') => void;
+  onOpenLivesModal?: () => void;
+  onOpenStreakMilestones?: () => void;
+  onOpenGemTopup?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -17,10 +20,14 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectTab,
   onStartPractice,
   onOpenAuth,
+  onOpenLivesModal,
+  onOpenStreakMilestones,
+  onOpenGemTopup,
 }) => {
   const [authLoading, setAuthLoading] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userLeagueDef = getLeagueById(userStats.leagueId || 1);
+  const isEnergyMode = userStats.livesMode === 'energy';
 
   const handleGoogleAuth = async () => {
     setAuthLoading(true);
@@ -91,31 +98,63 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           {/* Daily Streak */}
-          <div
-            title={`${userStats.streakDays} Day Study Streak`}
-            className="flex items-center gap-1 sm:gap-1.5 text-lightning-gold font-extrabold text-xs sm:text-sm px-2.5 py-1 rounded-xl bg-surface-container/60 border border-card-border/30 shadow-sm cursor-pointer hover:bg-surface-variant transition-colors"
+          <button
+            type="button"
+            onClick={() => {
+              if (onOpenStreakMilestones) onOpenStreakMilestones();
+            }}
+            title={`${userStats.streakDays} Day Study Streak — Click to view 25-day milestone rewards!`}
+            className="flex items-center gap-1 sm:gap-1.5 text-lightning-gold font-extrabold text-xs sm:text-sm px-2.5 py-1 rounded-xl bg-surface-container/60 border border-card-border/30 shadow-sm cursor-pointer hover:bg-surface-variant transition-all active:translate-y-0.5"
           >
             <span className="text-sm sm:text-base leading-none">🔥</span>
             <span>{userStats.streakDays}</span>
-          </div>
+          </button>
 
           {/* Bits / Gems */}
-          <div
-            title={`${userStats.gems} Bits Earned`}
-            className="flex items-center gap-1 sm:gap-1.5 text-secondary font-extrabold text-xs sm:text-sm px-2.5 py-1 rounded-xl bg-surface-container/60 border border-card-border/30 shadow-sm cursor-pointer hover:bg-surface-variant transition-colors"
+          <button
+            type="button"
+            onClick={() => {
+              if (onOpenGemTopup) {
+                onOpenGemTopup();
+              } else {
+                onSelectTab('shop');
+              }
+            }}
+            title={`${userStats.gems} Gems / Bits — Click to open gem vault!`}
+            className="flex items-center gap-1 sm:gap-1.5 text-secondary font-extrabold text-xs sm:text-sm px-2.5 py-1 rounded-xl bg-surface-container/60 border border-card-border/30 shadow-sm cursor-pointer hover:bg-surface-variant transition-all active:translate-y-0.5"
           >
             <span className="text-sm sm:text-base leading-none">💎</span>
             <span>{userStats.gems}</span>
-          </div>
+          </button>
 
-          {/* Exam Lives (Hearts) */}
-          <div
-            title={`${userStats.isPro ? 'Unlimited' : userStats.hearts} Exam Lives`}
-            className="flex items-center gap-1 sm:gap-1.5 text-crimson-heart font-extrabold text-xs sm:text-sm px-2.5 py-1 rounded-xl bg-surface-container/60 border border-card-border/30 shadow-sm cursor-pointer hover:bg-surface-variant transition-colors"
+          {/* Exam Lives (Hearts or Energy) */}
+          <button
+            type="button"
+            onClick={() => {
+              if (onOpenLivesModal) onOpenLivesModal();
+            }}
+            title={
+              userStats.isPro
+                ? 'Super Termy Pro: Unlimited Lives'
+                : isEnergyMode
+                ? `${userStats.energyUnits ?? 25} Energy Battery Units — Click to recharge`
+                : `${userStats.hearts} Exam Lives — Click to refill or practice`
+            }
+            className={`flex items-center gap-1 sm:gap-1.5 font-extrabold text-xs sm:text-sm px-2.5 py-1 rounded-xl bg-surface-container/60 border border-card-border/30 shadow-sm cursor-pointer hover:bg-surface-variant transition-all active:translate-y-0.5 ${
+              isEnergyMode ? 'text-lightning-gold' : 'text-crimson-heart'
+            }`}
           >
-            <span className="text-sm sm:text-base leading-none">❤️</span>
-            <span>{userStats.isPro ? '∞' : userStats.hearts}</span>
-          </div>
+            <span className="text-sm sm:text-base leading-none">
+              {isEnergyMode ? '⚡' : '❤️'}
+            </span>
+            <span>
+              {userStats.isPro
+                ? '∞'
+                : isEnergyMode
+                ? userStats.energyUnits ?? 25
+                : userStats.hearts}
+            </span>
+          </button>
 
           {/* Candidate Sign-in / User Profile Menu */}
           <div className="relative">

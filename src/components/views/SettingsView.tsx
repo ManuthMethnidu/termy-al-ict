@@ -500,6 +500,73 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </section>
 
+      {/* Lives & Pacing Preference */}
+      <section className="p-6 rounded-2xl bg-card-dark border border-card-border flex flex-col gap-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-crimson-heart text-xl">favorite</span>
+            <h2 className="text-base font-bold text-on-surface uppercase tracking-wider text-crimson-heart">
+              Lives & Pacing System
+            </h2>
+          </div>
+          <span className="text-[10px] text-secondary uppercase font-bold tracking-wider">
+            Duolingo Pacing Model
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              onUpdateStats({ livesMode: 'hearts' });
+            }}
+            className={`p-4 rounded-xl border text-left flex flex-col gap-1 transition-all ${
+              (userStats.livesMode || 'hearts') === 'hearts'
+                ? 'bg-crimson-heart/15 border-crimson-heart text-crimson-heart shadow-sm'
+                : 'bg-surface-container border-card-border text-text-muted hover:text-on-surface'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-extrabold text-sm flex items-center gap-1.5 text-on-surface">
+                <span>❤️</span> Option A: Hearts (5 Lives)
+              </span>
+              {(userStats.livesMode || 'hearts') === 'hearts' && (
+                <span className="material-symbols-outlined text-sm text-crimson-heart font-bold">check_circle</span>
+              )}
+            </div>
+            <p className="text-[11px] text-text-muted mt-1 leading-relaxed">
+              Loss-aversion model. Only wrong MCQ choices deduct 1 heart. Perfect answers cost nothing!
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              onUpdateStats({ livesMode: 'energy' });
+            }}
+            className={`p-4 rounded-xl border text-left flex flex-col gap-1 transition-all ${
+              userStats.livesMode === 'energy'
+                ? 'bg-lightning-gold/15 border-lightning-gold text-lightning-gold shadow-sm'
+                : 'bg-surface-container border-card-border text-text-muted hover:text-on-surface'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-extrabold text-sm flex items-center gap-1.5 text-on-surface">
+                <span>⚡</span> Option B: Energy Battery (25 Units)
+              </span>
+              {userStats.livesMode === 'energy' && (
+                <span className="material-symbols-outlined text-sm text-lightning-gold font-bold">check_circle</span>
+              )}
+            </div>
+            <p className="text-[11px] text-text-muted mt-1 leading-relaxed">
+              Smartphone battery pacing. Every question costs 1 unit. Avoids beginner penalty from early mistakes!
+            </p>
+          </button>
+        </div>
+      </section>
+
       {/* Social, Privacy & Friends Quests */}
       <section className="p-6 rounded-2xl bg-card-dark border border-card-border flex flex-col gap-4 shadow-sm">
         <h2 className="text-base font-bold text-on-surface uppercase tracking-wider text-purple-400">

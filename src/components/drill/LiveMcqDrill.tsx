@@ -14,6 +14,8 @@ interface LiveMcqDrillProps {
   userStats: UserStats;
   onUpdateStats: (newStats: Partial<UserStats>) => void;
   onClose: () => void;
+  isPracticeMode?: boolean;
+  onOpenLivesModal?: () => void;
 }
 
 export const LiveMcqDrill: React.FC<LiveMcqDrillProps> = ({
@@ -21,7 +23,10 @@ export const LiveMcqDrill: React.FC<LiveMcqDrillProps> = ({
   userStats,
   onUpdateStats,
   onClose,
+  isPracticeMode = false,
+  onOpenLivesModal,
 }) => {
+  const isEnergyMode = userStats.livesMode === 'energy';
   // Active question queue (allows missed questions to be cycled back to end of queue!)
   const [queue, setQueue] = useState<McqQuestion[]>(initialQuestions);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -30,11 +35,15 @@ export const LiveMcqDrill: React.FC<LiveMcqDrillProps> = ({
   const [isCorrect, setIsCorrect] = useState<boolean>(false);
   const [comboCount, setComboCount] = useState<number>(3);
   const [hearts, setHearts] = useState<number>(userStats.hearts);
+  const [energyUnits, setEnergyUnits] = useState<number>(userStats.energyUnits ?? 25);
+  const [outOfLives, setOutOfLives] = useState<boolean>(false);
   const [sessionXpEarned, setSessionXpEarned] = useState<number>(0);
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [termyMood, setTermyMood] = useState<TermyMood>('idle');
   const [termyComment, setTermyComment] = useState<string>(
-    'Focus on the minterm expansions! Use keyboard keys 1-4 to select.'
+    isPracticeMode
+      ? 'Free Practice Session: Master past paper MCQs to replenish your lives!'
+      : 'Focus on the minterm expansions! Use keyboard keys 1-4 to select.'
   );
 
   const currentQuestion = queue[currentIndex];
@@ -51,6 +60,18 @@ export const LiveMcqDrill: React.FC<LiveMcqDrillProps> = ({
     if (isAnswerChecked) {
       // Continue to next question
       if (currentIndex + 1 < queue.length) {
+        // Check if out of lives before advancing
+        if (!userStats.isPro && !isPracticeMode) {
+          if (isEnergyMode && energyUnits <= 0) {
+            setOutOfLives(true);
+            return;
+          }
+          if (!isEnergyMode && hearts <= 0) {
+            setOutOfLives(true);
+            return;
+          }
+        }
+
         setCurrentIndex((prev) => prev + 1);
         setSelectedOption(null);
         setIsAnswerChecked(false);
@@ -61,16 +82,41 @@ export const LiveMcqDrill: React.FC<LiveMcqDrillProps> = ({
         // Completed session!
         sounds.playFanfare();
         confetti({
-          particleCount: 80,
+          particleCount: 90,
           spread: 70,
           origin: { y: 0.6 },
         });
+
+        if (isPracticeMode) {
+          // Practice drill awards +1 Heart (or +5 Energy) and 3 Gems!
+          if (isEnergyMode) {
+            const nextEnergy = Math.min(userStats.maxEnergyUnits || 25, (userStats.energyUnits ?? 25) + 5);
+            onUpdateStats({
+              energyUnits: nextEnergy,
+              gems: userStats.gems + 3,
+            });
+            alert('🎉 Practice Session Complete! +5 Energy Battery recharged and +3 Gems earned! ⚡💎');
+          } else {
+            const nextHearts = Math.min(userStats.maxHearts || 5, userStats.hearts + 1);
+            onUpdateStats({
+              hearts: nextHearts,
+              gems: userStats.gems + 3,
+            });
+            alert('🎉 Practice Session Complete! +1 Exam Heart restored and +3 Gems earned! ❤️💎');
+          }
+        } else {
+          // Standard learning drill: awards 2–5 gems (3 base + 2 bonus for combo)
+          const bonusGems = comboCount >= 3 ? 5 : 3;
+          onUpdateStats({
+            gems: userStats.gems + bonusGems,
+          });
+        }
         onClose();
       }
       return;
     }
 
-    // Checking now
+    // Checking answer now
     const correct = selectedOption === currentQuestion.correctOption;
     setIsAnswerChecked(true);
     setIsCorrect(correct);
@@ -86,6 +132,13 @@ export const LiveMcqDrill: React.FC<LiveMcqDrillProps> = ({
       isCorrect: correct,
       timeSpentSeconds: timeSpent,
     });
+
+    // Handle Energy Mode: Every question costs 1 unit (whether right or wrong)
+    if (isEnergyMode && !userStats.isPro && !isPracticeMode) {
+      const nextEnergy = Math.max(0, energyUnits - 1);
+      setEnergyUnits(nextEnergy);
+      onUpdateStats({ energyUnits: nextEnergy });
+    }
 
     if (correct) {
       sounds.playCorrect();
@@ -120,7 +173,9 @@ export const LiveMcqDrill: React.FC<LiveMcqDrillProps> = ({
     } else {
       sounds.playIncorrect();
       setComboCount(0);
-      if (!userStats.isPro && hearts > 0) {
+
+      // Handle Hearts Mode: Mistakes deduct 1 heart
+      if (!isEnergyMode && !userStats.isPro && !isPracticeMode && hearts > 0) {
         const nextHearts = Math.max(0, hearts - 1);
         setHearts(nextHearts);
         onUpdateStats({ hearts: nextHearts });
@@ -130,7 +185,9 @@ export const LiveMcqDrill: React.FC<LiveMcqDrillProps> = ({
       setQueue((prevQueue) => [...prevQueue, currentQuestion]);
       setTermyMood('encouraging');
       setTermyComment(
-        `Missed this one! I've cycled it back into your active queue so you master it before finishing. Review in ${nextReviewIn}.`
+        isPracticeMode
+          ? `Missed! In practice mode, you don't lose lives. I've cycled it back so you master it before finishing.`
+          : `Missed this one! I've cycled it back into your active queue so you master it before finishing. Review in ${nextReviewIn}.`
       );
     }
   }, [
@@ -143,6 +200,9 @@ export const LiveMcqDrill: React.FC<LiveMcqDrillProps> = ({
     startTime,
     userStats,
     hearts,
+    energyUnits,
+    isEnergyMode,
+    isPracticeMode,
     onClose,
     onUpdateStats,
   ]);
@@ -209,19 +269,107 @@ export const LiveMcqDrill: React.FC<LiveMcqDrillProps> = ({
               />
             </div>
 
-            {/* Hearts Counter */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container border border-card-border/40 shadow-sm">
-              <span
-                className="material-symbols-outlined text-crimson-heart text-xl animate-pulse"
-                style={{ fontVariationSettings: '"FILL" 1' }}
+            {/* Practice Mode Indicator or Lives Counter */}
+            {isPracticeMode ? (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/20 border border-primary/40 text-primary shadow-sm font-extrabold text-xs">
+                <span>💚</span>
+                <span className="hidden sm:inline">PRACTICE REFILL</span>
+                <span className="sm:hidden">PRACTICE</span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  if (onOpenLivesModal) onOpenLivesModal();
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container border border-card-border/40 shadow-sm cursor-pointer hover:bg-surface-variant transition-colors ${
+                  isEnergyMode ? 'text-lightning-gold' : 'text-crimson-heart'
+                }`}
+                title="Click to view lives and refill options"
               >
-                favorite
-              </span>
-              <span className="font-bold text-crimson-heart">
-                {userStats.isPro ? '∞' : hearts}
-              </span>
-            </div>
+                <span className="text-base leading-none">
+                  {isEnergyMode ? '⚡' : '❤️'}
+                </span>
+                <span className="font-bold">
+                  {userStats.isPro ? '∞' : isEnergyMode ? energyUnits : hearts}
+                </span>
+              </button>
+            )}
           </header>
+
+          {/* Out of Lives Modal Overlay */}
+          {outOfLives && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="relative w-full max-w-md bg-[#182228] border-2 border-crimson-heart/50 rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-crimson-heart/20 border border-crimson-heart/40 flex items-center justify-center text-3xl shadow-lg">
+                  {isEnergyMode ? '⚡' : '💔'}
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-black text-on-surface">
+                    {isEnergyMode ? 'Energy Battery Depleted!' : 'Out of Exam Lives!'}
+                  </h3>
+                  <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                    {isEnergyMode
+                      ? 'You have reached 0/25 Energy Units. Refill to keep solving new past paper MCQs, or practice for free!'
+                      : 'You reached 0/5 Hearts from tricky MCQ traps. Refill to continue or switch to practice mode!'}
+                  </p>
+                </div>
+
+                <div className="w-full flex flex-col gap-2.5 pt-2">
+                  {/* Option 1: Gem Refill (50 Gems) */}
+                  <button
+                    onClick={() => {
+                      if (userStats.gems < 50) {
+                        alert('Not enough Gems! Watch an ad or practice to earn lives.');
+                        return;
+                      }
+                      sounds.playCorrect();
+                      if (isEnergyMode) {
+                        setEnergyUnits(25);
+                        onUpdateStats({ energyUnits: 25, gems: userStats.gems - 50 });
+                      } else {
+                        setHearts(5);
+                        onUpdateStats({ hearts: 5, gems: userStats.gems - 50 });
+                      }
+                      setOutOfLives(false);
+                      alert('Refilled! Continuing drill...');
+                    }}
+                    className="w-full py-3 rounded-xl bg-secondary hover:bg-secondary-hover text-on-secondary font-black text-xs uppercase tracking-wider shadow-md transition-all flex items-center justify-center gap-2"
+                  >
+                    <span>Refill Full Capacity (50 💎)</span>
+                  </button>
+
+                  {/* Option 2: Practice Mode */}
+                  <button
+                    onClick={() => {
+                      sounds.playClick();
+                      setOutOfLives(false);
+                      if (isEnergyMode) {
+                        setEnergyUnits(5);
+                        onUpdateStats({ energyUnits: 5 });
+                      } else {
+                        setHearts(1);
+                        onUpdateStats({ hearts: 1 });
+                      }
+                      alert('Granted emergency life! Continuing in practice review mode.');
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-primary/20 hover:bg-primary/30 text-primary border border-primary/40 font-extrabold text-xs uppercase tracking-wider transition-all"
+                  >
+                    Emergency +1 Life (Free Practice Mode)
+                  </button>
+
+                  {/* Option 3: Quit to Dashboard */}
+                  <button
+                    onClick={onClose}
+                    className="w-full py-2.5 rounded-xl bg-surface-container hover:bg-surface-variant text-text-muted hover:text-on-surface font-bold text-xs uppercase tracking-wider transition-colors border border-card-border"
+                  >
+                    Return to Dashboard
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Active 2x XP Turbo Banner */}
           {userStats.boostActiveUntil && userStats.boostActiveUntil > Date.now() && (

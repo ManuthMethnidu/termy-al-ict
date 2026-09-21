@@ -17,6 +17,9 @@ import { TermsOfServiceView } from './components/views/TermsOfServiceView';
 import { GuidebookModal } from './components/views/GuidebookModal';
 import { HelpFaqModal } from './components/views/HelpFaqModal';
 import { AuthModal } from './components/views/AuthModal';
+import { LivesRefillModal } from './components/common/LivesRefillModal';
+import { StreakMilestoneModal } from './components/common/StreakMilestoneModal';
+import { GemTopupModal } from './components/common/GemTopupModal';
 import { LiveMcqDrill } from './components/drill/LiveMcqDrill';
 import { SYLLABUS_QUESTIONS } from './data/syllabusQuestions';
 import { getAllMasterQuestions } from './lib/questionBankLoader';
@@ -29,6 +32,7 @@ import {
 } from './lib/auth';
 import { sounds } from './lib/sound';
 import { getCurrentWeekId, checkAndApplyWeeklyReset } from './lib/leagueSystem';
+import { calculatePassiveRegen } from './lib/gemEconomy';
 
 const INITIAL_STATS: UserStats = {
   name: 'Candidate',
@@ -36,12 +40,20 @@ const INITIAL_STATS: UserStats = {
   batch: '2025 A/L Batch',
   stream: 'Physical Science & ICT Stream',
   school: 'Royal College • Colombo 07',
-  streakDays: 1,
-  gems: 100,
+  streakDays: 0,
+  gems: 0,
   hearts: 5,
   maxHearts: 5,
-  xp: 50,
-  weeklyXp: 50,
+  livesMode: 'hearts',
+  energyUnits: 25,
+  maxEnergyUnits: 25,
+  lastHeartRegenTime: Date.now(),
+  lastEnergyRegenTime: Date.now(),
+  lastFreeRefillTime: 0,
+  streakMilestonesClaimed: [],
+  streakFreezesCount: 0,
+  xp: 0,
+  weeklyXp: 0,
   level: 1,
   leagueId: 1,
   league: 'Bronze League',
@@ -51,8 +63,8 @@ const INITIAL_STATS: UserStats = {
   tournamentStage: 'none',
   questPoints: 0,
   storedBoosts: 0,
-  followingCount: 3,
-  followersCount: 3,
+  followingCount: 0,
+  followersCount: 0,
   friendsQuestsEnabled: true,
   blockedUserIds: [],
   isPro: false,
@@ -161,11 +173,58 @@ function getUrlForTab(tab: NavTab): string {
   }
 }
 
+const STATS_STORAGE_VERSION = 'termy_v2_zero_start';
+
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavTab>(() => getTabFromLocation());
   const [userStats, setUserStats] = useState<UserStats>(() => {
     if (typeof window !== 'undefined') {
+      const currentVersion = localStorage.getItem('termy_stats_version');
       const saved = localStorage.getItem('termy_user_stats');
+
+      // If version mismatch or first visit on new economy, reset learning progress, attempts, and economy
+      if (currentVersion !== STATS_STORAGE_VERSION) {
+        localStorage.removeItem('termy_quiz_attempts_v1');
+        localStorage.setItem('termy_stats_version', STATS_STORAGE_VERSION);
+
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            const resetStats: UserStats = {
+              ...INITIAL_STATS,
+              name: parsed.name || INITIAL_STATS.name,
+              username: parsed.username || INITIAL_STATS.username,
+              batch: parsed.batch || INITIAL_STATS.batch,
+              stream: parsed.stream || INITIAL_STATS.stream,
+              school: parsed.school || INITIAL_STATS.school,
+              id: parsed.id,
+              email: parsed.email,
+              avatarUrl: parsed.avatarUrl,
+              isPro: parsed.isPro || false,
+              hearts: parsed.isPro ? 999 : 5,
+              energyUnits: 25,
+              streakDays: 0,
+              gems: 0,
+              xp: 0,
+              weeklyXp: 0,
+              questPoints: 0,
+              streakFreezesCount: 0,
+              streakMilestonesClaimed: [],
+              completedLessons: [],
+              reviewedQuestionIds: [],
+              followingCount: 0,
+              followersCount: 0,
+            };
+            localStorage.setItem('termy_user_stats', JSON.stringify(resetStats));
+            return resetStats;
+          } catch (e) {
+            console.warn('Failed parsing saved user stats', e);
+          }
+        }
+        localStorage.setItem('termy_user_stats', JSON.stringify(INITIAL_STATS));
+        return INITIAL_STATS;
+      }
+
       if (saved) {
         try {
           return { ...INITIAL_STATS, ...JSON.parse(saved) };
@@ -180,6 +239,10 @@ export const App: React.FC = () => {
   const [masterQuestions, setMasterQuestions] = useState<McqQuestion[]>(SYLLABUS_QUESTIONS);
   const [isDrillOpen, setIsDrillOpen] = useState<boolean>(false);
   const [drillQuestions, setDrillQuestions] = useState<McqQuestion[]>(SYLLABUS_QUESTIONS);
+  const [isPracticeDrillMode, setIsPracticeDrillMode] = useState<boolean>(false);
+  const [isLivesModalOpen, setIsLivesModalOpen] = useState<boolean>(false);
+  const [isStreakModalOpen, setIsStreakModalOpen] = useState<boolean>(false);
+  const [isGemTopupModalOpen, setIsGemTopupModalOpen] = useState<boolean>(false);
   const [isGuidebookOpen, setIsGuidebookOpen] = useState<boolean>(false);
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
@@ -190,6 +253,23 @@ export const App: React.FC = () => {
     setAuthInitialMode(mode);
     setIsAuthOpen(true);
   };
+
+  // Passive lives regeneration check (hearts every 5h, energy every 42m)
+  useEffect(() => {
+    const checkRegen = () => {
+      setUserStats((prev) => {
+        const { updatedStats, heartsRegened, energyRegened } = calculatePassiveRegen(prev);
+        if (heartsRegened > 0 || energyRegened > 0) {
+          syncUserStatsToSupabase(updatedStats);
+          return updatedStats;
+        }
+        return prev;
+      });
+    };
+    checkRegen();
+    const timer = setInterval(checkRegen, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Sync tab with browser URL, back/forward buttons, and clean OAuth tokens or PKCE code
   useEffect(() => {
@@ -274,13 +354,52 @@ export const App: React.FC = () => {
         const provider = (user.app_metadata?.provider === 'google' || meta.avatar_url ? 'google' : 'email') as 'google' | 'email';
 
         if (profile) {
-          setUserStats((prev) => ({
-            ...prev,
-            ...profile,
-            id: user.id,
-            email: user.email,
-            authProvider: provider,
-          }));
+          // Check if this profile has old pre-reset stats in Supabase that need to be zeroed
+          const cloudResetKey = `termy_cloud_zero_start_${user.id}`;
+          const needsCloudReset =
+            !localStorage.getItem(cloudResetKey) &&
+            ((profile.xp || 0) > 0 ||
+              (profile.gems || 0) > 0 ||
+              (profile.streakDays || 0) > 0);
+
+          if (needsCloudReset) {
+            localStorage.setItem(cloudResetKey, 'true');
+            const zeroedProfile: Partial<UserStats> = {
+              ...profile,
+              xp: 0,
+              weeklyXp: 0,
+              gems: 0,
+              streakDays: 0,
+              questPoints: 0,
+              hearts: profile.isPro ? 999 : 5,
+              energyUnits: 25,
+              streakMilestonesClaimed: [],
+              streakFreezesCount: 0,
+              completedLessons: [],
+              reviewedQuestionIds: [],
+              followingCount: 0,
+              followersCount: 0,
+            };
+            setUserStats((prev) => {
+              const updated = {
+                ...prev,
+                ...zeroedProfile,
+                id: user.id,
+                email: user.email,
+                authProvider: provider,
+              };
+              syncUserStatsToSupabase(updated);
+              return updated;
+            });
+          } else {
+            setUserStats((prev) => ({
+              ...prev,
+              ...profile,
+              id: user.id,
+              email: user.email,
+              authProvider: provider,
+            }));
+          }
         } else {
           // Fresh candidate sign-in
           const candidateName =
@@ -339,7 +458,17 @@ export const App: React.FC = () => {
 
   const handleStartLesson = () => {
     sounds.playClick();
-    // Sample 5 real questions from Unit 3 (Digital Electronics) or master bank
+    // Check lives before starting standard progression lesson if not Pro
+    if (!userStats.isPro) {
+      const isEnergy = userStats.livesMode === 'energy';
+      const currentLives = isEnergy ? (userStats.energyUnits ?? 25) : userStats.hearts;
+      if (currentLives <= 0) {
+        setIsLivesModalOpen(true);
+        return;
+      }
+    }
+
+    setIsPracticeDrillMode(false);
     const unit3Pool = masterQuestions.filter((q) => q.unit === 3);
     const pool = unit3Pool.length > 0 ? unit3Pool : masterQuestions;
     const shuffled = [...pool].sort(() => 0.5 - Math.random()).slice(0, 5);
@@ -347,8 +476,18 @@ export const App: React.FC = () => {
     setIsDrillOpen(true);
   };
 
+  const handleStartPracticeDrill = () => {
+    sounds.playClick();
+    setIsPracticeDrillMode(true);
+    const pool = masterQuestions.length > 0 ? masterQuestions : SYLLABUS_QUESTIONS;
+    const shuffled = [...pool].sort(() => 0.5 - Math.random()).slice(0, 5);
+    setDrillQuestions(shuffled);
+    setIsDrillOpen(true);
+  };
+
   const handleStartCustomDrill = (customQuestions: McqQuestion[]) => {
     sounds.playClick();
+    setIsPracticeDrillMode(false);
     setDrillQuestions(customQuestions);
     setIsDrillOpen(true);
   };
@@ -369,8 +508,11 @@ export const App: React.FC = () => {
           userStats={userStats}
           activeTab={activeTab}
           onSelectTab={handleSelectTab}
-          onStartPractice={handleStartLesson}
+          onStartPractice={handleStartPracticeDrill}
           onOpenAuth={handleOpenAuth}
+          onOpenLivesModal={() => setIsLivesModalOpen(true)}
+          onOpenStreakMilestones={() => setIsStreakModalOpen(true)}
+          onOpenGemTopup={() => setIsGemTopupModalOpen(true)}
         />
 
         {/* Viewport Content */}
@@ -427,6 +569,7 @@ export const App: React.FC = () => {
               userStats={userStats}
               onUpdateStats={handleUpdateStats}
               onOpenAuth={handleOpenAuth}
+              onStartPractice={handleStartPracticeDrill}
             />
           )}
 
@@ -516,8 +659,40 @@ export const App: React.FC = () => {
           userStats={userStats}
           onUpdateStats={handleUpdateStats}
           onClose={() => setIsDrillOpen(false)}
+          isPracticeMode={isPracticeDrillMode}
+          onOpenLivesModal={() => setIsLivesModalOpen(true)}
         />
       )}
+
+      {/* Lives & Refills Management Modal */}
+      <LivesRefillModal
+        isOpen={isLivesModalOpen}
+        onClose={() => setIsLivesModalOpen(false)}
+        userStats={userStats}
+        onUpdateStats={handleUpdateStats}
+        onStartPractice={() => {
+          setIsLivesModalOpen(false);
+          handleStartPracticeDrill();
+        }}
+        onOpenShop={() => handleSelectTab('shop')}
+      />
+
+      {/* Streak Milestone Rewards Modal */}
+      <StreakMilestoneModal
+        isOpen={isStreakModalOpen}
+        onClose={() => setIsStreakModalOpen(false)}
+        userStats={userStats}
+        onUpdateStats={handleUpdateStats}
+      />
+
+      {/* Gem Vault Microtransaction Topup Modal */}
+      <GemTopupModal
+        isOpen={isGemTopupModalOpen}
+        onClose={() => setIsGemTopupModalOpen(false)}
+        userStats={userStats}
+        onUpdateStats={handleUpdateStats}
+        onOpenShop={() => handleSelectTab('shop')}
+      />
 
       {/* Unit Guidebook Modal */}
       <GuidebookModal

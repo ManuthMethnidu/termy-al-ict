@@ -16,6 +16,7 @@ export interface LeagueDefinition {
   minPromoteRank: number; // Top N promote (e.g. 7, or 10 in Diamond for Tournament)
   maxDemoteRank: number;  // Bottom N demote (e.g. 26-30, 0 for Bronze)
   baseXpRange: [number, number];
+  gemPrizes: [number, number, number]; // [1st place, 2nd place, 3rd place] weekly gem payout
 }
 
 /**
@@ -38,6 +39,7 @@ export const LEAGUES: LeagueDefinition[] = [
     minPromoteRank: 7,
     maxDemoteRank: 0, // No demotion in Bronze
     baseXpRange: [80, 450],
+    gemPrizes: [60, 40, 25],
   },
   {
     id: 2,
@@ -55,6 +57,7 @@ export const LEAGUES: LeagueDefinition[] = [
     minPromoteRank: 7,
     maxDemoteRank: 26,
     baseXpRange: [250, 750],
+    gemPrizes: [80, 55, 35],
   },
   {
     id: 3,
@@ -72,6 +75,7 @@ export const LEAGUES: LeagueDefinition[] = [
     minPromoteRank: 7,
     maxDemoteRank: 26,
     baseXpRange: [500, 1200],
+    gemPrizes: [100, 70, 45],
   },
   {
     id: 4,
@@ -89,6 +93,7 @@ export const LEAGUES: LeagueDefinition[] = [
     minPromoteRank: 7,
     maxDemoteRank: 26,
     baseXpRange: [900, 1800],
+    gemPrizes: [130, 90, 60],
   },
   {
     id: 5,
@@ -106,6 +111,7 @@ export const LEAGUES: LeagueDefinition[] = [
     minPromoteRank: 7,
     maxDemoteRank: 26,
     baseXpRange: [1400, 2600],
+    gemPrizes: [160, 110, 75],
   },
   {
     id: 6,
@@ -123,6 +129,7 @@ export const LEAGUES: LeagueDefinition[] = [
     minPromoteRank: 7,
     maxDemoteRank: 26,
     baseXpRange: [2000, 3600],
+    gemPrizes: [200, 140, 95],
   },
   {
     id: 7,
@@ -140,6 +147,7 @@ export const LEAGUES: LeagueDefinition[] = [
     minPromoteRank: 7,
     maxDemoteRank: 26,
     baseXpRange: [2800, 4800],
+    gemPrizes: [240, 170, 115],
   },
   {
     id: 8,
@@ -157,6 +165,7 @@ export const LEAGUES: LeagueDefinition[] = [
     minPromoteRank: 7,
     maxDemoteRank: 26,
     baseXpRange: [3800, 6200],
+    gemPrizes: [290, 200, 135],
   },
   {
     id: 9,
@@ -174,6 +183,7 @@ export const LEAGUES: LeagueDefinition[] = [
     minPromoteRank: 7,
     maxDemoteRank: 26,
     baseXpRange: [5200, 8500],
+    gemPrizes: [350, 240, 160],
   },
   {
     id: 10,
@@ -191,6 +201,7 @@ export const LEAGUES: LeagueDefinition[] = [
     minPromoteRank: 10, // Qualifies for Diamond Tournament
     maxDemoteRank: 26,  // Drops to Obsidian
     baseXpRange: [6800, 11500],
+    gemPrizes: [500, 350, 250],
   },
 ];
 
@@ -389,10 +400,20 @@ export function checkAndApplyWeeklyReset(userStats: UserStats): {
     statusMessage = `Weekly competition reset. You safely held your place in the ${leagueDef.name} League (Rank ${currentRank}).`;
   }
 
+  // Top 3 Podium Gem Reward based on League Tier
+  let gemReward = 0;
+  if (currentRank >= 1 && currentRank <= 3 && leagueDef.gemPrizes) {
+    gemReward = leagueDef.gemPrizes[currentRank - 1] || 0;
+    if (gemReward > 0) {
+      statusMessage += ` 🏆 Top 3 Podium Finish (Rank #${currentRank})! You won +${gemReward} Gems! 💎`;
+    }
+  }
+
   const updatedLeagueDef = getLeagueById(newLeagueId);
 
   const nextStats: UserStats = {
     ...userStats,
+    gems: (userStats.gems || 0) + gemReward,
     leagueId: newLeagueId,
     league: `${updatedLeagueDef.name} League`,
     weeklyXp: 0, // Weekly XP resets back to 0!

@@ -64,6 +64,14 @@ export interface UserStats {
   gems: number; // bits / diamonds
   hearts: number; // max 5
   maxHearts: number;
+  livesMode?: 'hearts' | 'energy'; // Option A: Legacy Hearts (5) vs Option B: Energy Battery (25)
+  energyUnits?: number; // current battery capacity (max 25)
+  maxEnergyUnits?: number; // max 25
+  lastHeartRegenTime?: number; // timestamp ms of last passive heart regen
+  lastEnergyRegenTime?: number; // timestamp ms of last passive energy regen
+  lastFreeRefillTime?: number; // timestamp ms of last 4-hour free refill claim
+  streakMilestonesClaimed?: number[]; // list of milestone day numbers claimed
+  streakFreezesCount?: number; // equipped streak freezes in inventory (max 2)
   xp: number; // Total lifetime experience points
   weeklyXp?: number; // Experience points earned in current week's league competition
   level: number;

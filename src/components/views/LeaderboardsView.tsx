@@ -560,8 +560,15 @@ export const LeaderboardsView: React.FC<LeaderboardsProps> = ({
                           </div>
                         </div>
 
-                        {/* XP & Streak */}
-                        <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+                        {/* XP & Streak & Top 3 Gem Prize */}
+                        <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
+                          {item.rank <= 3 && selectedLeague.gemPrizes && (
+                            <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-secondary/15 border border-secondary/30 text-secondary font-mono font-bold text-xs shadow-sm" title={`Top 3 Podium Reward: +${selectedLeague.gemPrizes[item.rank - 1]} Gems`}>
+                              <span>💎</span>
+                              <span>+{selectedLeague.gemPrizes[item.rank - 1]}</span>
+                            </div>
+                          )}
+
                           {item.streak > 0 && (
                             <div className="hidden sm:flex items-center gap-1 text-xs font-mono font-bold text-amber-400">
                               <span>🔥</span>
@@ -897,6 +904,20 @@ export const LeaderboardsView: React.FC<LeaderboardsProps> = ({
                   <p>
                     Reaching Tier 10 (Diamond League) unlocks multi-week knockout tournament rounds
                     (Quarter-Finals ➔ Semi-Finals ➔ National Finals) for top performers!
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-surface-container-high border border-card-border flex gap-3">
+                <span className="material-symbols-outlined text-secondary text-2xl shrink-0 mt-0.5">
+                  workspace_premium
+                </span>
+                <div>
+                  <h4 className="font-extrabold text-sm text-on-surface mb-0.5">
+                    5. Weekly Top 3 Gem Payouts 💎
+                  </h4>
+                  <p>
+                    Finishing on the podium (Ranks 1, 2, or 3) awards substantial gem payouts based on your league tier (from 60 💎 in Bronze up to 500 💎 in Diamond) when the weekly timer resets!
                   </p>
                 </div>
               </div>

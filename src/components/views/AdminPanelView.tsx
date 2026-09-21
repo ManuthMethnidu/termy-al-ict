@@ -91,6 +91,9 @@ export const AdminPanelView: React.FC<AdminPanelProps> = ({
   } | null>(null);
   const [copiedSqlUser, setCopiedSqlUser] = useState<string | null>(null);
   const [subFilter, setSubFilter] = useState<'all' | 'pro' | 'standard'>('all');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetResult, setResetResult] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+  const [copiedResetSql, setCopiedResetSql] = useState(false);
 
   // Handle Login
   const handleLogin = (e: React.FormEvent) => {
@@ -384,6 +387,144 @@ export const AdminPanelView: React.FC<AdminPanelProps> = ({
       sounds.playClick();
       setCopiedSqlUser(username);
       setTimeout(() => setCopiedSqlUser(null), 2500);
+    }
+  };
+
+  const RESET_MIGRATION_SQL = `-- Termy Database Zero-Start Reset Migration
+-- 1. Update column defaults on public.profiles to 0
+ALTER TABLE public.profiles
+  ALTER COLUMN streak_days SET DEFAULT 0,
+  ALTER COLUMN xp SET DEFAULT 0,
+  ALTER COLUMN weekly_xp SET DEFAULT 0,
+  ALTER COLUMN gems SET DEFAULT 0,
+  ALTER COLUMN hearts SET DEFAULT 5,
+  ALTER COLUMN quest_points SET DEFAULT 0;
+
+-- 2. Reset all candidate accounts in public.profiles to 0
+UPDATE public.profiles
+SET
+  xp = 0,
+  weekly_xp = 0,
+  gems = 0,
+  streak_days = 0,
+  quest_points = 0,
+  tournament_stage = 'none',
+  league_id = 1,
+  league_group_number = 1,
+  stored_boosts = 0,
+  boost_active_until = null,
+  hearts = CASE WHEN is_pro THEN 999 ELSE 5 END,
+  updated_at = timezone('utc'::text, now());
+
+-- 3. Purge all prior quiz attempts and study records
+DELETE FROM public.quiz_attempts;
+DELETE FROM public.study_queue;
+DELETE FROM public.user_quests;
+DELETE FROM public.user_inventory;
+DELETE FROM public.league_participants;`;
+
+  const handleCopyResetSql = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(RESET_MIGRATION_SQL);
+      sounds.playClick();
+      setCopiedResetSql(true);
+      setTimeout(() => setCopiedResetSql(false), 2500);
+    }
+  };
+
+  const handleExecuteProgressReset = async () => {
+    if (!window.confirm('Are you sure you want to reset ALL candidate progress (lessons done, gems, XP, streaks) to 0 across the entire database? This cannot be undone.')) {
+      return;
+    }
+    setResetLoading(true);
+    setResetResult(null);
+
+    try {
+      const activeServiceKey =
+        serviceRoleKey.trim() ||
+        (typeof window !== 'undefined'
+          ? sessionStorage.getItem(SERVICE_KEY_STORAGE) || localStorage.getItem(SERVICE_KEY_STORAGE)
+          : '');
+      const config = getSupabaseConfig();
+      let success = false;
+      let count = 0;
+
+      // Method 1: If service role key is present
+      if (activeServiceKey && config.url) {
+        const adminClient = createClient(config.url, activeServiceKey, { auth: { persistSession: false } });
+        const { data, error } = await adminClient
+          .from('profiles')
+          .update({
+            xp: 0,
+            weekly_xp: 0,
+            gems: 0,
+            streak_days: 0,
+            quest_points: 0,
+            tournament_stage: 'none',
+            stored_boosts: 0,
+            boost_active_until: null,
+            updated_at: new Date().toISOString(),
+          })
+          .neq('id', '00000000-0000-0000-0000-000000000000')
+          .select();
+
+        await adminClient.from('quiz_attempts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await adminClient.from('study_queue').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await adminClient.from('league_participants').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+        if (!error) {
+          success = true;
+          count = data?.length || 0;
+        }
+      }
+
+      // Method 2: Call admin_reset_all_candidates_progress RPC
+      if (!success) {
+        const client = getSupabaseClient();
+        if (client) {
+          const { data, error } = await client.rpc('admin_reset_all_candidates_progress');
+          if (!error && data?.success) {
+            success = true;
+            count = data.candidates_reset || 0;
+          }
+        }
+      }
+
+      if (success) {
+        sounds.playFanfare();
+        setResetResult({
+          type: 'success',
+          text: `Successfully reset all ${count} candidate accounts to 0 XP, 0 gems, and 0 streaks!`,
+        });
+        fetchAdminData();
+        if (onUpdateStats) {
+          onUpdateStats({
+            xp: 0,
+            weeklyXp: 0,
+            gems: 0,
+            streakDays: 0,
+            questPoints: 0,
+            completedLessons: [],
+            reviewedQuestionIds: [],
+            followingCount: 0,
+            followersCount: 0,
+          });
+        }
+      } else {
+        sounds.playCorrect();
+        setResetResult({
+          type: 'info',
+          text: `Reset script ready! Click "Copy Reset SQL" below and run it in the Supabase SQL Editor, or enter your Supabase Service Role Key above.`,
+        });
+      }
+    } catch (err: any) {
+      sounds.playIncorrect();
+      setResetResult({
+        type: 'error',
+        text: `Reset notice: ${err?.message || 'Check database connection.'}`,
+      });
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -1420,6 +1561,80 @@ export const AdminPanelView: React.FC<AdminPanelProps> = ({
                 </div>
               )}
             </div>
+          </section>
+
+          {/* Section: Zero-Start Progress Reset & Database Migration */}
+          <section className="p-6 rounded-2xl bg-card-dark border-2 border-crimson-heart/40 flex flex-col gap-4 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-crimson-heart/20 border border-crimson-heart flex items-center justify-center text-crimson-heart">
+                  <span className="material-symbols-outlined text-2xl">restart_alt</span>
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-on-surface">
+                    Global Zero-Start Candidate Reset & Migration
+                  </h2>
+                  <p className="text-xs text-text-muted">
+                    Reset all candidate progress (completed lessons, gems, XP, streaks) back to 0 so everyone starts fresh on the new economy.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-surface-container/60 border border-card-border flex flex-col gap-2">
+              <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-base text-secondary">info</span>
+                Zero-Start Rules & Actions:
+              </span>
+              <ul className="text-xs text-text-muted space-y-1 list-disc list-inside">
+                <li>Sets candidate <code className="text-secondary font-mono">xp = 0</code>, <code className="text-secondary font-mono">weekly_xp = 0</code>, <code className="text-secondary font-mono">gems = 0</code>, <code className="text-secondary font-mono">streak_days = 0</code>.</li>
+                <li>Preserves registered email, username, name, avatar, and Super Pro status (<code className="text-primary font-mono">hearts: 999</code> for Pro, <code className="text-primary font-mono">5</code> for Free).</li>
+                <li>Purges old quiz attempt logs and resets league cohorts cleanly.</li>
+                <li>Updates default constraints in Postgres schema so new signups start at 0.</li>
+              </ul>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <button
+                type="button"
+                onClick={handleExecuteProgressReset}
+                disabled={resetLoading}
+                className="px-5 py-2.5 bg-crimson-heart text-white rounded-xl text-xs uppercase font-extrabold tracking-wider shadow-md hover:brightness-110 active:scale-95 transition-all flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined text-base">
+                  {resetLoading ? 'sync' : 'delete_forever'}
+                </span>
+                <span>{resetLoading ? 'Resetting Cloud Records...' : 'Execute Cloud Reset (0 Lessons & Gems)'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCopyResetSql}
+                className="px-4 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface rounded-xl text-xs uppercase font-bold tracking-wider border border-card-border flex items-center gap-1.5 transition-all"
+              >
+                <span className="material-symbols-outlined text-base">
+                  {copiedResetSql ? 'check' : 'content_copy'}
+                </span>
+                <span>{copiedResetSql ? 'Migration SQL Copied!' : 'Copy Migration SQL'}</span>
+              </button>
+            </div>
+
+            {resetResult && (
+              <div
+                className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 border ${
+                  resetResult.type === 'success'
+                    ? 'bg-primary/10 border-primary/30 text-primary'
+                    : resetResult.type === 'error'
+                    ? 'bg-crimson-heart/10 border-crimson-heart/30 text-crimson-heart'
+                    : 'bg-secondary/10 border-secondary/30 text-secondary'
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">
+                  {resetResult.type === 'success' ? 'check_circle' : 'info'}
+                </span>
+                <span>{resetResult.text}</span>
+              </div>
+            )}
           </section>
         </div>
       )}

@@ -1,47 +1,239 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserStats } from '../../types';
 import { sounds } from '../../lib/sound';
+import {
+  ECONOMY_PRICES,
+  GEM_PACK_TIERS,
+  GemPackTier,
+  STREAK_MILESTONES,
+  getTimeUntilNextHeart,
+  getTimeUntilNextEnergy,
+  getTimeUntilFreeRefill,
+} from '../../lib/gemEconomy';
+import confetti from 'canvas-confetti';
 
 interface ShopViewProps {
   userStats: UserStats;
   onUpdateStats: (newStats: Partial<UserStats>) => void;
   onOpenAuth?: (mode?: 'signin' | 'signup') => void;
+  onStartPractice?: () => void;
 }
 
 export const ShopView: React.FC<ShopViewProps> = ({
   userStats,
   onUpdateStats,
   onOpenAuth,
+  onStartPractice,
 }) => {
   const [copiedUsername, setCopiedUsername] = useState(false);
+  const [currency, setCurrency] = useState<'USD' | 'LKR'>('LKR');
+  const [purchasingPack, setPurchasingPack] = useState<string | null>(null);
+  const [adWatching, setAdWatching] = useState<boolean>(false);
+  const [adCountdown, setAdCountdown] = useState<number>(5);
+  const [, setTick] = useState<number>(Date.now());
 
-  const handleBuyHearts = () => {
-    if (userStats.hearts >= userStats.maxHearts) {
-      alert('Your exam lives are already full (5/5)!');
-      return;
-    }
-    if (userStats.gems < 200) {
-      alert('Not enough Bits/Gems! Complete daily drills to earn more.');
-      return;
-    }
-    sounds.playCorrect();
-    onUpdateStats({
-      hearts: userStats.maxHearts,
-      gems: userStats.gems - 200,
-    });
-    alert('Exam lives fully replenished to 5/5!');
+  // Tick every second for live regeneration countdowns
+  useEffect(() => {
+    const timer = setInterval(() => setTick(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const livesMode = userStats.livesMode || 'hearts';
+  const isHearts = livesMode === 'hearts';
+  const currentCapacity = isHearts ? userStats.hearts : (userStats.energyUnits ?? 25);
+  const maxCapacity = isHearts ? userStats.maxHearts : (userStats.maxEnergyUnits ?? 25);
+  const isLivesFull = currentCapacity >= maxCapacity;
+
+  const heartCountdown = getTimeUntilNextHeart(userStats.lastHeartRegenTime);
+  const energyCountdown = getTimeUntilNextEnergy(userStats.lastEnergyRegenTime);
+  const freeRefillStatus = getTimeUntilFreeRefill(userStats.lastFreeRefillTime);
+
+  const handleToggleMode = (mode: 'hearts' | 'energy') => {
+    sounds.playClick();
+    onUpdateStats({ livesMode: mode });
   };
 
-  const handleBuyFreeze = () => {
-    if (userStats.gems < 150) {
-      alert('Not enough Bits/Gems! Complete daily drills to earn more.');
+  // 1. Full Refill (50 Gems - Cheaper price)
+  const handleBuyFullRefill = () => {
+    if (isLivesFull) {
+      alert(`${isHearts ? 'Exam lives' : 'Energy'} already full!`);
+      return;
+    }
+    const cost = isHearts ? ECONOMY_PRICES.FULL_HEARTS_REFILL : ECONOMY_PRICES.FULL_ENERGY_REFILL;
+    if (userStats.gems < cost) {
+      sounds.playIncorrect();
+      alert(`Not enough Gems! You have ${userStats.gems} 💎, but need ${cost} 💎.`);
+      return;
+    }
+
+    sounds.playCorrect();
+    if (isHearts) {
+      onUpdateStats({
+        hearts: maxCapacity,
+        gems: userStats.gems - cost,
+        lastHeartRegenTime: Date.now(),
+      });
+      alert('Exam lives fully replenished to 5/5! (50 💎)');
+    } else {
+      onUpdateStats({
+        energyUnits: maxCapacity,
+        gems: userStats.gems - cost,
+        lastEnergyRegenTime: Date.now(),
+      });
+      alert('Energy battery fully recharged to 25/25! (50 💎)');
+    }
+  };
+
+  // 2. Single Emergency Refill (15 Gems)
+  const handleBuySingleRefill = () => {
+    if (isLivesFull) {
+      alert('Lives already full!');
+      return;
+    }
+    const cost = isHearts ? ECONOMY_PRICES.SINGLE_HEART_REFILL : ECONOMY_PRICES.SINGLE_ENERGY_REFILL;
+    if (userStats.gems < cost) {
+      sounds.playIncorrect();
+      alert(`Not enough Gems! You need ${cost} 💎.`);
+      return;
+    }
+
+    sounds.playCorrect();
+    if (isHearts) {
+      onUpdateStats({
+        hearts: Math.min(maxCapacity, (userStats.hearts || 0) + 1),
+        gems: userStats.gems - cost,
+      });
+      alert('Added +1 Exam Heart! (15 💎)');
+    } else {
+      onUpdateStats({
+        energyUnits: Math.min(maxCapacity, (userStats.energyUnits || 0) + 5),
+        gems: userStats.gems - cost,
+      });
+      alert('Added +5 Energy Units! (10 💎)');
+    }
+  };
+
+  // 3. 4-Hour Free Recharge Claim
+  const handleClaimFreeRefill = () => {
+    if (!freeRefillStatus.isAvailable) {
+      alert(`Free recharge cooling down! Next free refill available in ${freeRefillStatus.formatted}.`);
       return;
     }
     sounds.playCorrect();
+    if (isHearts) {
+      onUpdateStats({
+        hearts: Math.min(maxCapacity, (userStats.hearts || 0) + 1),
+        lastFreeRefillTime: Date.now(),
+      });
+      alert('Claimed +1 Exam Heart from 4-hour recharge station! ❤️');
+    } else {
+      onUpdateStats({
+        energyUnits: Math.min(maxCapacity, (userStats.energyUnits || 0) + 5),
+        lastFreeRefillTime: Date.now(),
+      });
+      alert('Claimed +5 Energy Units from 4-hour recharge station! ⚡');
+    }
+  };
+
+  // 4. Study Break Ad Refill
+  const handleWatchAdRefill = () => {
+    if (isLivesFull) {
+      alert('Your lives are already at max capacity!');
+      return;
+    }
+    setAdWatching(true);
+    setAdCountdown(5);
+
+    const interval = setInterval(() => {
+      setAdCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setAdWatching(false);
+          sounds.playFanfare();
+          if (isHearts) {
+            onUpdateStats({
+              hearts: Math.min(maxCapacity, (userStats.hearts || 0) + 1),
+            });
+            alert('Study Break complete! +1 Exam Heart redeemed! ❤️');
+          } else {
+            onUpdateStats({
+              energyUnits: Math.min(maxCapacity, (userStats.energyUnits || 0) + 5),
+            });
+            alert('Study Break complete! +5 Energy Units redeemed! ⚡');
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // 5. Streak Freeze (Cheaper: 50 Gems!)
+  const streakFreezes = userStats.streakFreezesCount || 0;
+  const handleBuyFreeze = () => {
+    if (streakFreezes >= ECONOMY_PRICES.MAX_STREAK_FREEZES) {
+      alert(`You already have maximum Streak Freezes equipped (${streakFreezes}/${ECONOMY_PRICES.MAX_STREAK_FREEZES})!`);
+      return;
+    }
+    if (userStats.gems < ECONOMY_PRICES.STREAK_FREEZE) {
+      sounds.playIncorrect();
+      alert(`Not enough Gems! Streak Freeze costs ${ECONOMY_PRICES.STREAK_FREEZE} 💎.`);
+      return;
+    }
+
+    sounds.playCorrect();
     onUpdateStats({
-      gems: userStats.gems - 150,
+      gems: userStats.gems - ECONOMY_PRICES.STREAK_FREEZE,
+      streakFreezesCount: streakFreezes + 1,
     });
-    alert('Streak Freeze equipped! Your study streak is protected for tomorrow.');
+    alert(`Streak Freeze equipped (${streakFreezes + 1}/${ECONOMY_PRICES.MAX_STREAK_FREEZES})! Your revision streak is protected for tomorrow.`);
+  };
+
+  // 6. 2x XP Turbo (Cheaper: 20 Gems!)
+  const handleBuyTurbo = () => {
+    if (userStats.gems < ECONOMY_PRICES.TIMER_BOOST) {
+      sounds.playIncorrect();
+      alert(`Not enough Gems! 2x XP Turbo costs ${ECONOMY_PRICES.TIMER_BOOST} 💎.`);
+      return;
+    }
+
+    sounds.playFanfare();
+    confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 } });
+    onUpdateStats({
+      gems: userStats.gems - ECONOMY_PRICES.TIMER_BOOST,
+      boostActiveUntil: Date.now() + 15 * 60 * 1000,
+    });
+    alert('⚡ 2x XP Turbo activated for 15 minutes! All MCQ drill points are doubled!');
+  };
+
+  // 7. Legendary Challenge Pass (25 Gems)
+  const handleBuyLegendaryPass = () => {
+    if (userStats.gems < ECONOMY_PRICES.LEGENDARY_CHALLENGE) {
+      sounds.playIncorrect();
+      alert(`Not enough Gems! Legendary Challenge Pass costs ${ECONOMY_PRICES.LEGENDARY_CHALLENGE} 💎.`);
+      return;
+    }
+    sounds.playFanfare();
+    onUpdateStats({
+      gems: userStats.gems - ECONOMY_PRICES.LEGENDARY_CHALLENGE,
+    });
+    alert('🏆 Legendary Challenge Pass unlocked! Dive into official past paper distinction drills.');
+  };
+
+  // 8. Gem Bundle Purchase Simulation
+  const handleBuyGemPack = (pack: GemPackTier) => {
+    setPurchasingPack(pack.id);
+    sounds.playClick();
+
+    setTimeout(() => {
+      setPurchasingPack(null);
+      sounds.playFanfare();
+      confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+      onUpdateStats({
+        gems: (userStats.gems || 0) + pack.gemQuantity,
+      });
+      alert(`Top-up successful! Added +${pack.gemQuantity.toLocaleString()} Gems to your balance! 💎`);
+    }, 700);
   };
 
   const handleCopyUsername = () => {
@@ -59,10 +251,58 @@ export const ShopView: React.FC<ShopViewProps> = ({
   const isGuest = !userStats.email && userStats.authProvider === 'guest';
 
   return (
-    <div className="flex flex-col w-full max-w-3xl mx-auto gap-8 pb-24 md:pb-12">
-      {/* Super Termy Pro Hero Card */}
+    <div className="flex flex-col w-full max-w-4xl mx-auto gap-8 pb-24 md:pb-12 select-none">
+      {/* 0. Top Gem Economy Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-surface-container border border-card-border shadow-md">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-secondary/20 border border-secondary/40 flex items-center justify-center text-2xl shadow-inner">
+            💎
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-sm sm:text-base text-on-surface">
+                Termy Gem Economy
+              </span>
+              <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
+                Cheaper Student Rates
+              </span>
+            </div>
+            <span className="text-xs text-text-muted">
+              Current Balance:{' '}
+              <span className="text-secondary font-black font-mono text-sm">
+                {userStats.gems} Gems (Bits)
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="flex p-0.5 rounded-lg bg-surface-container-high border border-card-border">
+            <button
+              type="button"
+              onClick={() => setCurrency('LKR')}
+              className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${
+                currency === 'LKR' ? 'bg-secondary text-on-secondary shadow-sm' : 'text-text-muted'
+              }`}
+            >
+              LKR (Rs)
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrency('USD')}
+              className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${
+                currency === 'USD' ? 'bg-secondary text-on-secondary shadow-sm' : 'text-text-muted'
+              }`}
+            >
+              USD ($)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 1. Super Termy Pro Hero Card */}
       {userStats.isPro ? (
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#182a4d] via-[#1b3438] to-[#1a3826] p-6 sm:p-8 border-2 border-primary/50 shadow-xl">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#182a4d] via-[#1b3438] to-[#1a3826] p-6 sm:p-8 border-2 border-primary/50 shadow-xl">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div className="flex items-start gap-4">
               <div className="w-16 h-16 rounded-2xl bg-primary/20 border-2 border-primary flex items-center justify-center text-primary shadow-lg shrink-0">
@@ -76,7 +316,7 @@ export const ShopView: React.FC<ShopViewProps> = ({
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                     PRO ACTIVE
                   </span>
-                  <span className="text-xs text-lightning-gold font-bold">★ UNLIMITED ACCESS</span>
+                  <span className="text-xs text-lightning-gold font-bold">★ UNLIMITED LIVES</span>
                 </div>
                 <h2 className="text-2xl font-extrabold text-on-surface">Super Termy Pro Plan</h2>
                 <p className="text-xs text-text-muted leading-relaxed max-w-md">
@@ -105,7 +345,7 @@ export const ShopView: React.FC<ShopViewProps> = ({
           </div>
         </div>
       ) : (
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#121c2c] via-[#1a233a] to-[#251b38] p-6 sm:p-8 border-2 border-primary/40 shadow-2xl flex flex-col gap-6">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#121c2c] via-[#1a233a] to-[#251b38] p-6 sm:p-8 border-2 border-primary/40 shadow-2xl flex flex-col gap-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="flex items-start gap-4">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#00a8ed] to-[#74e930] flex items-center justify-center shadow-lg shrink-0">
@@ -122,7 +362,7 @@ export const ShopView: React.FC<ShopViewProps> = ({
                 </div>
                 <h2 className="text-2xl font-extrabold text-on-surface">Super Termy Pro Plan</h2>
                 <p className="text-xs text-text-muted leading-relaxed max-w-lg">
-                  Unlimited hearts, verified marking scheme derivations, and priority active recall drills for all 2,636 official syllabus questions.
+                  Unlimited hearts, verified marking scheme derivations, and priority active recall drills for all 2,636 official syllabus questions. Skip microtransactions entirely!
                 </p>
               </div>
             </div>
@@ -257,126 +497,407 @@ export const ShopView: React.FC<ShopViewProps> = ({
                 )}
               </div>
             </div>
-
-            {isGuest && (
-              <div className="text-[11px] text-lightning-gold flex items-center gap-1.5 px-1">
-                <span className="material-symbols-outlined text-sm shrink-0">info</span>
-                <span>
-                  You are currently in Guest mode. Please create an account or sign in before upgrading so your Pro subscription is linked permanently to your profile.
-                </span>
-              </div>
-            )}
           </div>
         </div>
       )}
 
-      {/* Hearts / Exam Lives Section */}
+      {/* 2. Lives System (Hearts vs Energy Battery) */}
       <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span
-              className="material-symbols-outlined text-crimson-heart text-2xl"
+              className={`material-symbols-outlined text-2xl ${isHearts ? 'text-crimson-heart' : 'text-lightning-gold'}`}
               style={{ fontVariationSettings: '"FILL" 1' }}
             >
-              favorite
+              {isHearts ? 'favorite' : 'bolt'}
             </span>
-            <h3 className="text-xl font-bold text-on-surface">Exam Heart Refills</h3>
-          </div>
-          <span className="text-xs uppercase tracking-wider text-text-muted">
-            Auto-replenishes every 4 hours
-          </span>
-        </div>
-
-        <div className="rounded-2xl bg-card-dark border border-card-border p-5 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#381e1e] border border-crimson-heart/30 flex items-center justify-center shrink-0">
-              <span
-                className="material-symbols-outlined text-crimson-heart text-3xl"
-                style={{ fontVariationSettings: '"FILL" 1' }}
-              >
-                favorite
+            <div>
+              <h3 className="text-xl font-bold text-on-surface">The Lives System</h3>
+              <span className="text-xs text-text-muted">
+                Choose between Loss-Aversion Hearts (5) or Continuous Energy Battery (25)
               </span>
             </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <h4 className="text-base font-bold text-on-surface">Refill Exam Lives</h4>
-                <span className="text-xs text-primary font-bold">
-                  ({userStats.isPro ? 'Unlimited Pro' : `${userStats.hearts}/5`})
-                </span>
+          </div>
+
+          {/* Mode Switcher */}
+          <div className="flex p-1 rounded-xl bg-surface-container border border-card-border self-start sm:self-auto">
+            <button
+              onClick={() => handleToggleMode('hearts')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+                isHearts ? 'bg-crimson-heart text-white shadow-sm' : 'text-text-muted hover:text-on-surface'
+              }`}
+            >
+              <span>❤️</span>
+              <span>Option A: Hearts</span>
+            </button>
+            <button
+              onClick={() => handleToggleMode('energy')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+                !isHearts ? 'bg-lightning-gold text-black shadow-sm' : 'text-text-muted hover:text-on-surface'
+              }`}
+            >
+              <span>⚡</span>
+              <span>Option B: Energy</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Ad simulation player */}
+        {adWatching && (
+          <div className="p-6 rounded-2xl bg-[#0e161a] border-2 border-lightning-gold flex flex-col items-center justify-center text-center gap-3 animate-pulse">
+            <span className="material-symbols-outlined text-4xl text-lightning-gold">smart_display</span>
+            <h4 className="text-sm font-black text-on-surface">Watching Sponsor Study Break...</h4>
+            <div className="w-12 h-12 rounded-full bg-lightning-gold/20 text-lightning-gold border border-lightning-gold/40 flex items-center justify-center font-mono font-black text-lg">
+              {adCountdown}s
+            </div>
+          </div>
+        )}
+
+        {/* Lives Card */}
+        <div className="rounded-3xl bg-card-dark border-2 border-card-border p-5 sm:p-6 shadow-md flex flex-col gap-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 ${
+                isHearts ? 'bg-crimson-heart/15 border border-crimson-heart/30 text-crimson-heart' : 'bg-lightning-gold/15 border border-lightning-gold/30 text-lightning-gold'
+              }`}>
+                {isHearts ? '❤️' : '⚡'}
               </div>
-              <p className="text-xs text-text-muted">
-                Stay in your late-night study flow without interruptions when analyzing tricky MCQs.
-              </p>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-base font-bold text-on-surface">
+                    {isHearts ? 'Exam Lives (Hearts)' : 'Energy Unit Battery'}
+                  </h4>
+                  <span className="text-xs text-primary font-bold">
+                    ({userStats.isPro ? 'Unlimited Pro' : `${currentCapacity}/${maxCapacity}`})
+                  </span>
+                </div>
+                <p className="text-xs text-text-muted max-w-md mt-0.5">
+                  {isHearts
+                    ? 'Only mistakes deduct a heart. Perfect answers cost nothing! Regenerates 1 heart every 5 hours.'
+                    : 'Smartphone battery style. Each answered question costs 1 energy unit. Regenerates 1 unit every 42 mins.'}
+                </p>
+                <div className="flex items-center gap-3 mt-2 text-[11px] text-text-muted font-mono">
+                  <span>
+                    Passive Regen:{' '}
+                    <strong className="text-on-surface">
+                      {isHearts ? heartCountdown.formatted : energyCountdown.formatted}
+                    </strong>
+                  </span>
+                  <span>•</span>
+                  <span>
+                    4h Recharge:{' '}
+                    <strong className={freeRefillStatus.isAvailable ? 'text-primary' : 'text-on-surface'}>
+                      {freeRefillStatus.formatted}
+                    </strong>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions button group */}
+            <div className="flex flex-wrap sm:flex-col items-center sm:items-end gap-2 shrink-0">
+              <button
+                onClick={handleBuyFullRefill}
+                disabled={isLivesFull || userStats.isPro}
+                className={`px-4 py-2.5 rounded-xl text-xs uppercase font-extrabold tracking-wider transition-all ${
+                  isLivesFull || userStats.isPro
+                    ? 'bg-surface-container text-text-muted cursor-not-allowed border border-card-border'
+                    : 'bg-secondary hover:bg-secondary-hover text-on-secondary shadow-md active:translate-y-0.5'
+                }`}
+              >
+                {isLivesFull ? 'Capacity Full' : 'Full Refill (50 💎)'}
+              </button>
+
+              <button
+                onClick={handleBuySingleRefill}
+                disabled={isLivesFull || userStats.isPro}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${
+                  isLivesFull || userStats.isPro
+                    ? 'bg-surface-container text-text-muted cursor-not-allowed border-card-border'
+                    : 'bg-surface-container hover:bg-surface-variant text-on-surface border-card-border'
+                }`}
+              >
+                Emergency Unit ({isHearts ? '15 💎' : '10 💎'})
+              </button>
             </div>
           </div>
 
-          <button
-            onClick={handleBuyHearts}
-            disabled={userStats.hearts >= userStats.maxHearts || userStats.isPro}
-            className={`px-5 py-2.5 rounded-xl text-xs uppercase font-extrabold tracking-wider transition-all shrink-0 ${
-              userStats.hearts >= userStats.maxHearts || userStats.isPro
-                ? 'bg-gray-inactive text-text-muted cursor-not-allowed'
-                : 'bg-crimson-heart text-white btn-pressable-dark'
-            }`}
-          >
-            {userStats.hearts >= userStats.maxHearts || userStats.isPro
-              ? 'Hearts Full'
-              : 'Refill (200 💎)'}
-          </button>
+          {/* Free Refill Alternatives Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-card-border/60">
+            {/* Free Practice */}
+            <div className="p-3.5 rounded-xl bg-surface-container border border-card-border flex flex-col justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-1.5 text-primary font-bold text-xs">
+                  <span className="material-symbols-outlined text-sm">school</span>
+                  <span>1. Practice Review</span>
+                </div>
+                <p className="text-[11px] text-text-muted mt-1 leading-relaxed">
+                  Solve 5 past paper MCQs for free to earn back {isHearts ? '+1 Heart' : '+5 Energy'} and 3 Gems!
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  if (onStartPractice) onStartPractice();
+                }}
+                className="w-full py-1.5 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/40 rounded-lg text-[11px] font-extrabold uppercase transition-all"
+              >
+                Practice Drill (Free)
+              </button>
+            </div>
+
+            {/* 4-Hour Recharge Button */}
+            <div className="p-3.5 rounded-xl bg-surface-container border border-card-border flex flex-col justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-1.5 text-secondary font-bold text-xs">
+                  <span className="material-symbols-outlined text-sm">battery_charging_full</span>
+                  <span>2. 4h Recharge Station</span>
+                </div>
+                <p className="text-[11px] text-text-muted mt-1 leading-relaxed">
+                  Free booster dispenser replenishes {isHearts ? '+1 Heart' : '+5 Units'} every 4 hours.
+                </p>
+              </div>
+              <button
+                onClick={handleClaimFreeRefill}
+                disabled={!freeRefillStatus.isAvailable || isLivesFull}
+                className={`w-full py-1.5 rounded-lg text-[11px] font-extrabold uppercase transition-all ${
+                  freeRefillStatus.isAvailable && !isLivesFull
+                    ? 'bg-secondary/20 hover:bg-secondary/30 text-secondary border border-secondary/40 active:translate-y-0.5'
+                    : 'bg-surface-container-high text-text-muted cursor-not-allowed border border-card-border'
+                }`}
+              >
+                {freeRefillStatus.isAvailable ? 'Claim Free Refill' : freeRefillStatus.formatted}
+              </button>
+            </div>
+
+            {/* Sponsor Study Break Ad Refill */}
+            <div className="p-3.5 rounded-xl bg-surface-container border border-card-border flex flex-col justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-1.5 text-lightning-gold font-bold text-xs">
+                  <span className="material-symbols-outlined text-sm">smart_display</span>
+                  <span>3. Study Break Clip</span>
+                </div>
+                <p className="text-[11px] text-text-muted mt-1 leading-relaxed">
+                  Watch a 5-second sponsor video to instantly redeem {isHearts ? '+1 Heart' : '+5 Energy'}.
+                </p>
+              </div>
+              <button
+                onClick={handleWatchAdRefill}
+                disabled={adWatching || isLivesFull}
+                className={`w-full py-1.5 rounded-lg text-[11px] font-extrabold uppercase transition-all ${
+                  adWatching || isLivesFull
+                    ? 'bg-surface-container-high text-text-muted cursor-not-allowed border border-card-border'
+                    : 'bg-lightning-gold/20 hover:bg-lightning-gold/30 text-lightning-gold border border-lightning-gold/40 active:translate-y-0.5'
+                }`}
+              >
+                {adWatching ? 'Watching...' : 'Watch Clip'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Power-ups: Streak Freezes & Double XP */}
+      {/* 3. Study Boosters & Power-ups (Cheaper Prices!) */}
       <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-lightning-gold text-2xl">bolt</span>
-          <h3 className="text-xl font-bold text-on-surface">Study Boosters</h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-lightning-gold text-2xl">bolt</span>
+            <h3 className="text-xl font-bold text-on-surface">Study Boosters</h3>
+          </div>
+          <span className="text-xs text-lightning-gold font-bold uppercase tracking-wider">
+            Discounted Student Prices
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Streak Freeze */}
-          <div className="p-5 rounded-2xl bg-card-dark border border-card-border flex flex-col justify-between gap-4 shadow-md">
-            <div className="flex items-start gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Streak Freeze (50 Gems - was 150/200) */}
+          <div className="p-5 rounded-2xl bg-card-dark border border-card-border flex flex-col justify-between gap-4 shadow-md hover:border-secondary/50 transition-colors">
+            <div className="flex items-start gap-3">
               <div className="w-12 h-12 rounded-xl bg-surface-container-high border border-card-border flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-secondary text-2xl">ac_unit</span>
               </div>
               <div className="flex flex-col">
-                <h4 className="text-base font-bold text-on-surface">Streak Freeze</h4>
-                <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                  Preserves your study streak if you miss a revision day during school term tests.
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-on-surface">Streak Freeze</h4>
+                  <span className="font-mono text-[10px] text-text-muted">
+                    {streakFreezes}/2 Equipped
+                  </span>
+                </div>
+                <p className="text-[11px] text-text-muted mt-1 leading-relaxed">
+                  Preserves study streak if you miss a revision day during term tests.
                 </p>
               </div>
             </div>
             <button
               onClick={handleBuyFreeze}
-              className="w-full py-2.5 bg-surface-container hover:bg-surface-variant text-secondary border border-secondary/40 rounded-xl text-xs uppercase font-extrabold tracking-wider transition-all"
+              disabled={streakFreezes >= 2}
+              className={`w-full py-2.5 rounded-xl text-xs uppercase font-extrabold tracking-wider transition-all ${
+                streakFreezes >= 2
+                  ? 'bg-surface-container text-text-muted cursor-not-allowed border border-card-border'
+                  : 'bg-surface-container hover:bg-surface-variant text-secondary border border-secondary/40'
+              }`}
             >
-              Equip Freeze (150 💎)
+              {streakFreezes >= 2 ? 'Equipped Max (2/2)' : 'Equip Freeze (50 💎)'}
             </button>
           </div>
 
-          {/* Double XP Boost */}
-          <div className="p-5 rounded-2xl bg-card-dark border border-card-border flex flex-col justify-between gap-4 shadow-md">
-            <div className="flex items-start gap-4">
+          {/* 2x XP Turbo (20 Gems - was 100) */}
+          <div className="p-5 rounded-2xl bg-card-dark border border-card-border flex flex-col justify-between gap-4 shadow-md hover:border-lightning-gold/50 transition-colors">
+            <div className="flex items-start gap-3">
               <div className="w-12 h-12 rounded-xl bg-surface-container-high border border-card-border flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-lightning-gold text-2xl">double_arrow</span>
               </div>
               <div className="flex flex-col">
-                <h4 className="text-base font-bold text-on-surface">2x XP Turbo (15 Min)</h4>
-                <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                  Double every point earned during rapid past paper review to climb Diamond League!
+                <h4 className="text-sm font-bold text-on-surface">2x XP Turbo (15m)</h4>
+                <p className="text-[11px] text-text-muted mt-1 leading-relaxed">
+                  Double every point earned during rapid past paper review to climb leagues!
                 </p>
               </div>
             </div>
             <button
-              onClick={() => {
-                alert('2x Turbo Boost activated for 15 minutes!');
-              }}
-              className="w-full py-2.5 bg-surface-container hover:bg-surface-variant text-lightning-gold border border-lightning-gold/40 rounded-xl text-xs uppercase font-extrabold tracking-wider transition-all"
+              onClick={handleBuyTurbo}
+              className="w-full py-2.5 bg-surface-container hover:bg-surface-variant text-lightning-gold border border-lightning-gold/40 rounded-xl text-xs uppercase font-extrabold tracking-wider transition-all active:translate-y-0.5"
             >
-              Activate Turbo (100 💎)
+              Activate Turbo (20 💎)
             </button>
           </div>
+
+          {/* Legendary Challenge Pass (25 Gems - was 100) */}
+          <div className="p-5 rounded-2xl bg-card-dark border border-card-border flex flex-col justify-between gap-4 shadow-md hover:border-primary/50 transition-colors">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-xl bg-surface-container-high border border-card-border flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-primary text-2xl">military_tech</span>
+              </div>
+              <div className="flex flex-col">
+                <h4 className="text-sm font-bold text-on-surface">Legendary Challenge</h4>
+                <p className="text-[11px] text-text-muted mt-1 leading-relaxed">
+                  Lock in permanent gold distinction status on tricky syllabus unit drills.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleBuyLegendaryPass}
+              className="w-full py-2.5 bg-surface-container hover:bg-surface-variant text-primary border border-primary/40 rounded-xl text-xs uppercase font-extrabold tracking-wider transition-all active:translate-y-0.5"
+            >
+              Unlock Test (25 💎)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. The Gem Buying System (Real-Money Microtransactions at Cheaper Student Pricing!) */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-secondary text-2xl">payments</span>
+            <div>
+              <h3 className="text-xl font-bold text-on-surface">💳 Gem Vault (Real-Money Bundles)</h3>
+              <span className="text-xs text-text-muted">
+                Cheaper student discount packs for emergency freezes & refills
+              </span>
+            </div>
+          </div>
+
+          <div className="text-xs text-secondary font-bold bg-secondary/10 border border-secondary/20 px-3 py-1 rounded-full self-start sm:self-auto">
+            Save up to 75% vs Duolingo ($3.99 - $9.99)
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {GEM_PACK_TIERS.map((pack) => {
+            const priceLabel = currency === 'LKR' ? `Rs. ${pack.costLkr}` : `$${pack.costUsd.toFixed(2)}`;
+
+            return (
+              <div
+                key={pack.id}
+                className={`relative p-5 rounded-2xl border-2 flex flex-col justify-between gap-4 transition-all ${
+                  pack.popular
+                    ? 'bg-[#152733] border-secondary shadow-lg ring-1 ring-secondary/50'
+                    : 'bg-card-dark border-card-border/80 hover:border-secondary/40'
+                }`}
+              >
+                {pack.badge && (
+                  <div className="absolute -top-3 right-4 px-2.5 py-0.5 rounded-full bg-secondary text-on-secondary font-extrabold text-[10px] uppercase tracking-wider shadow">
+                    {pack.badge}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2">
+                  <div className="w-12 h-12 rounded-xl bg-surface-container-high border border-card-border/60 flex items-center justify-center text-2xl shadow-inner">
+                    {pack.icon}
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-base text-on-surface">{pack.name}</h4>
+                    <span className="font-mono font-black text-secondary text-sm">
+                      +{pack.gemQuantity.toLocaleString()} Gems 💎
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-text-muted leading-relaxed">{pack.bestFor}</p>
+                  <span className="text-[10px] text-lightning-gold font-bold bg-lightning-gold/10 px-2 py-0.5 rounded border border-lightning-gold/20 self-start">
+                    {pack.duoComparison}
+                  </span>
+                </div>
+
+                <div className="pt-3 border-t border-card-border/50 flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-lg font-black text-on-surface font-mono">{priceLabel}</span>
+                    <span className="text-[9px] text-text-muted uppercase font-bold">One-time bundle</span>
+                  </div>
+
+                  <button
+                    onClick={() => handleBuyGemPack(pack)}
+                    disabled={purchasingPack === pack.id}
+                    className="px-4 py-2 bg-secondary hover:bg-secondary-hover text-on-secondary rounded-xl text-xs uppercase font-extrabold tracking-wider shadow-md transition-all active:translate-y-0.5"
+                  >
+                    {purchasingPack === pack.id ? 'Adding...' : 'Top-Up'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 5. Progressive Streak Milestones Summary */}
+      <div className="p-6 rounded-3xl bg-surface-container border border-card-border flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🔥</span>
+            <div>
+              <h3 className="text-base font-bold text-on-surface">Streak Milestone Gem Rewards</h3>
+              <span className="text-xs text-text-muted">
+                Duolingo 25-Day Cycle Rewards (25d = 25 💎, 50d = 250 💎, 75d = 375 💎)
+              </span>
+            </div>
+          </div>
+
+          <span className="text-xs font-mono font-bold text-lightning-gold bg-lightning-gold/10 px-2.5 py-1 rounded-lg border border-lightning-gold/20">
+            Current: {userStats.streakDays} Days
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          {STREAK_MILESTONES.slice(0, 4).map((m) => {
+            const isReached = (userStats.streakDays || 0) >= m.days;
+            return (
+              <div
+                key={m.days}
+                className={`p-3 rounded-xl border flex flex-col gap-1 ${
+                  isReached
+                    ? 'bg-amber-500/10 border-amber-500/40 text-lightning-gold'
+                    : 'bg-card-dark border-card-border/60 text-text-muted'
+                }`}
+              >
+                <div className="flex items-center justify-between text-[11px] font-extrabold">
+                  <span>{m.days} Days</span>
+                  <span>{isReached ? 'Unlocked ✓' : 'Upcoming'}</span>
+                </div>
+                <span className="font-mono font-bold text-xs text-secondary">
+                  +{m.gemsReward} 💎 Gems
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
